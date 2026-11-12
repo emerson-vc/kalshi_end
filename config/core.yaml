@@ -1,0 +1,74 @@
+# Combo Edge v2 defaults. The dashboard (System → Settings) stores overrides in the
+# database; this file is the fallback and documents every default.
+
+bankroll_and_caps:
+  bankroll: 1000.0              # dollars; edited on the dashboard header
+  kelly_fraction: 0.25          # quarter Kelly
+  min_stake: 1.0
+  max_stake_per_combo: 5.0
+  daily_spend_cap: 30.0
+  max_bets_per_game: 3
+  max_bets_per_player: 2
+  edge_for_max_stake: 0.50      # EV above the gate (at the lower bound) that earns the full $5
+
+gates:
+  # Required EV after fees by payout; interpolated smoothly in log-payout.
+  payout_curve:
+    - [3, 0.08]
+    - [10, 0.12]
+    - [20, 0.18]
+    - [35, 0.25]
+    - [50, 0.35]
+  longshot_payout: 50.0         # above this payout ...
+  longshot_required_ev: 1.00    # ... auto-buy only at +100% EV or better
+  max_quote_age_s: 3.0
+  require_history_calibration: false   # families with no nflverse history pass on the simulator alone
+
+budget:
+  stake: 5.0                    # target cost for screen RFQs
+  creation_budget_per_run: 500
+  max_new_combos_per_run: 500
+  weekly_creation_cap: 5000
+  weekly_creation_reserve: 300  # left for the Kalshi app
+  id_shortlist_per_run: 30
+  id_random_share: 0.20
+  id_rfq_daily_cap: 100
+  id_rfq_daily_cap_paper: 40
+  take_rate_warn: 0.05
+  exploration_share: 0.15
+  quote_window_s: 5.0
+  max_open_rfqs: 90
+  rate_budget_fraction: 0.60
+
+search:
+  payout_band: [8.0, 50.0]
+  joint_cap_multiple: 6.0       # fair joint never exceeds this multiple of independence
+  lower_bound_base: 0.08        # fair_lower = fair * (1 - u)
+  lower_bound_per_doubling: 0.10  # +10% of fair per doubling above 20x
+  lower_bound_pivot_payout: 20.0
+  max_candidates_per_run: 6000
+  sim_paths: 20000
+  team_total_window: 7.0        # team-total rungs within +/-7 points of the team's main line
+  families:
+    qb_ptd_team_total:
+      label: "QB pass TDs + own team total"
+      share: 0.40
+    qb_pyds_rec_yds:
+      label: "QB pass yards + own top receiver yards"
+      share: 0.25
+    rec_td_team_total:
+      label: "Top receiver TDs + own team total"
+      share: 0.20
+    ml_h1_lead:
+      label: "Team win + same team 1H lead"
+      share: 0.15
+
+schedules:
+  daily_scan_enabled: true
+  daily_scan_default_hour: 10   # local; moves as the timing data learns
+  requote_buckets_h: [144, 96, 72, 48, 24, 12, 6, 1]
+  requote_id_panel_size: 15
+  requote_anon_panel_size: 100
+  fade_controls: 3
+  wake_enabled: false
+  wake_minutes_before: 10

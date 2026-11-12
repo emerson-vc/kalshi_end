@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}System · Combo Edge{% endblock %}
+{% block content %}
+<div class="grid md:grid-cols-2 gap-4">
+  <section class="panel p-4">
+    <h2 class="font-bold mb-1">Health</h2>
+    <div class="text-xs muted mb-3">{{ env_desc }}</div>
+    <ul class="space-y-2 text-sm">{% for name, ok, note in checks %}
+      <li class="flex gap-2 items-start"><span class="{{ 'pos' if ok else 'bad' }} font-bold">{{ '●' }}</span><div><b>{{ name }}</b><div class="text-xs muted">{{ note }}</div></div></li>{% endfor %}
+    </ul>
+    {% if limits %}<div class="text-xs muted mt-3">API tier <b>{{ limits.get('usage_tier') }}</b> · read {{ limits.get('read', {}).get('refill_rate') }}/s · write {{ limits.get('write', {}).get('refill_rate') }}/s (the tool uses {{ fmt(s.get('rate_budget_fraction'), 'pct') }})</div>{% endif %}
+  </section>
+  <section class="panel p-4 text-sm space-y-3">
+    <h2 class="font-bold">Background jobs</h2>
+    {% set desc = {'recorder': 'Read-only feed recorder (24/7): indexes combos other people created and their demand.', 'requote': 'Re-quote panel every 10 min at 144/96/72/48/24/12/6/1 h before kickoff; never creates combos, never buys. Also runs the weekly fade check.', 'dailyscan': 'One automatic scan per day at the learned best time; buys if execution is Real.'} %}
+    {% for j, st in jobs.items() %}
+    <div class="flex items-start justify-between gap-3">
+      <div><b>{{ j }}</b> <span class="chip {{ 'chip-ok' if st.get('installed') else '' }}">{{ 'installed' if st.get('installed') else 'not installed' }}{% if st.get('running') %} · running{% endif %}</span><div class="text-xs muted">{{ desc[j] }}</div></div>
+      {% if st.get('installed') %}<button class="btn btn-sm" hx-post="/api/launchd/uninstall/{{ j }}" hx-target="next span">Uninstall</button>{% else %}<button class="btn btn-sm btn-primary" hx-post="/api/launchd/install/{{ j }}" hx-target="next span">Install</button>{% endif %}<span class="text-xs"></span>
+    </div>{% endfor %}
+    <div class="text-xs muted">Wake before the daily scan (optional, off by default) needs sudo and power: <code>{{ wake_cmd }}</code> — or run <code>combo-edge wake enable</code> for the exact time.</div>
+    <div class="flex gap-2"><button class="btn btn-sm" hx-post="/api/fit" hx-target="next span">Refit models</button><span class="text-xs"></span></div>
+  </section>
+</div>
+<section class="panel p-4 text-sm">
+  <h2 class="font-bold mb-2">Recent errors and warnings</h2>
+  {% for e in errors %}<div class="text-xs"><span class="{{ 'bad' if e.level == 'error' else 'text-[var(--warn)]' }}">{{ e.level }}</span> · {{ fmt_ago(e.ts) }} · {{ e.source }}: {{ e.message }}</div>{% else %}<div class="muted">None.</div>{% endfor %}
+</section>
+<section class="panel p-4">
+  <h2 class="font-bold mb-3">Settings</h2>
+  <form hx-post="/api/settings" hx-target="#settings-msg" class="space-y-6">
+    {% for group, items in groups.items() %}
+    <fieldset><legend class="text-xs uppercase tracking-wide muted font-semibold mb-2">{{ group }}</legend>
+      <div class="grid md:grid-cols-2 gap-x-6 gap-y-3">
+      {% for it in items %}{% set m = it.meta %}
+        <label class="block text-sm">
+          <div class="flex justify-between"><b>{{ m.label }}</b>{% if it.overridden %}<button type="button" class="text-xs underline muted" hx-post="/api/settings/reset/{{ m.key }}" hx-target="#settings-msg">reset</button>{% endif %}</div>
+          <div class="text-xs muted mb-1">{{ m.help }} <span class="opacity-70">Default: {{ it.default|tojson if m.kind in ('curve', 'band', 'families') else it.default }}</span></div>
+          {% if m.kind == 'bool' %}<input type="hidden" name="_present_{{ m.key }}" value="1"><input type="checkbox" name="{{ m.key }}" value="true" {{ 'checked' if it.value }}>
+          {% elif m.kind in ('curve', 'band', 'families') %}<textarea name="{{ m.key }}" class="input font-mono text-xs" rows="{{ 3 if m.kind != 'band' else 1 }}">{{ it.value|tojson }}</textarea>
+          {% else %}<input name="{{ m.key }}" class="input num" value="{{ it.value }}">{% endif %}
+        </label>
+      {% endfor %}</div>
+    </fieldset>{% endfor %}
+    <div class="flex items-center gap-3"><button class="btn btn-primary">Save settings</button><span id="settings-msg"></span></div>
+  </form>
+</section>
+<section class="panel p-4 text-sm">
+  <h2 class="font-bold mb-2">Glossary</h2>
+  <dl class="grid md:grid-cols-2 gap-x-6 gap-y-2">{% for term, d in glossary %}<div><dt class="font-semibold">{{ term }}</dt><dd class="muted text-xs">{{ d }}</dd></div>{% endfor %}</dl>
+</section>
+{% endblock %}

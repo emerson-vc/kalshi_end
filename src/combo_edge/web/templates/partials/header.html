@@ -1,0 +1,64 @@
+{% set g = h %}
+{% if g.restart_needed %}
+<div class="bg-[var(--warn)] text-black text-sm px-4 py-2 flex items-center justify-between gap-3">
+  <span><b>Restart needed:</b> the code on disk is newer than this running dashboard.</span>
+  <button class="btn btn-sm" hx-post="/api/restart" hx-swap="none">Restart (waits for any scan)</button>
+</div>
+{% endif %}
+{% if g.killed %}
+<div class="bg-[var(--neg)] text-white text-sm px-4 py-2 flex items-center justify-between gap-3">
+  <span><b>Kill switch is on.</b> Execution is off, schedulers are paused, open RFQs were cancelled.</span>
+  <button class="btn btn-sm" hx-post="/api/resume" hx-swap="none">Resume</button>
+</div>
+{% endif %}
+{% if g.fade_warning %}
+<div class="bg-[var(--neg)] text-white text-sm px-4 py-2"><b>Fade warning:</b> your ID quotes are converging toward anonymous prices. See Insights.</div>
+{% endif %}
+{% if g.take_rate_warn %}
+<div class="bg-[var(--warn)] text-black text-sm px-4 py-2"><b>Low take rate:</b> {{ fmt(g.take_rate_7d.rate, 'pct') }} over 7 days (warning below {{ fmt(g.take_rate_warn_level, 'pct') }}). Asking a lot and rarely buying can make makers price you like anonymous flow.</div>
+{% endif %}
+<header class="border-b border-[var(--border)] bg-[var(--panel)]">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-3">
+    <div class="flex items-center gap-2">
+      <span class="font-extrabold tracking-tight text-lg">Combo Edge</span>
+      <span class="chip {{ 'chip-bad' if g.env == 'prod' else ('chip-warn' if g.env == 'demo' else '') }}" title="Which exchange this dashboard talks to">{{ g.env|upper }}</span>
+    </div>
+    <div class="flex items-center gap-2" x-data="{ open: false }">
+      {% if g.mode == 'real' %}<span class="real-badge">REAL</span>{% endif %}
+      <div class="inline-flex rounded-lg border border-[var(--border)] overflow-hidden text-sm font-semibold" title="Execution mode. Real buys automatically when every gate passes.">
+        {% for m in ['off', 'paper', 'real'] %}
+          {% if m == 'real' %}
+          <button class="px-3 py-1.5 {{ 'bg-[var(--real)] text-white' if g.mode == m else 'muted' }}" {% if g.forbid_live %}disabled title="COMBO_EDGE_FORBID_LIVE=1"{% endif %} @click="open = true">Real</button>
+          {% else %}
+          <button class="px-3 py-1.5 {{ 'bg-[var(--accent)] text-white' if g.mode == m else 'muted' }}" hx-post="/api/mode" hx-vals='{"mode": "{{ m }}"}' hx-swap="none">{{ m|capitalize }}</button>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @keydown.escape.window="open=false">
+        <div class="panel p-5 max-w-md space-y-3">
+          <h2 class="text-lg font-bold">Switch to Real?</h2>
+          <p class="text-sm">In Real mode Combo Edge <b>buys automatically</b> every ID quote that passes the gates, with no per-bet confirmation. Caps still apply: ${{ '%g'|format(g.daily_cap) }} per day, $5 per combo, 3 per game, 2 per player. The first Real bet is a <b>$1 canary</b>.</p>
+          <div class="flex gap-2 justify-end">
+            <button class="btn" @click="open=false">Cancel</button>
+            <button class="btn btn-danger" hx-post="/api/mode" hx-vals='{"mode": "real", "confirm": "yes"}' hx-swap="none" @click="open=false">Yes, switch to Real</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <form class="flex items-center gap-1 text-sm" hx-post="/api/bankroll" hx-swap="none" x-data="{ edit: false }">
+      <span class="muted">Bankroll</span>
+      <button type="button" x-show="!edit" @click="edit = true" class="font-bold num underline decoration-dotted" title="Click to edit">{{ money.fmt_money(g.bankroll) }}</button>
+      <input x-show="edit" x-cloak name="bankroll" type="number" step="1" min="1" value="{{ g.bankroll|int }}" class="input w-24 num">
+      <button x-show="edit" x-cloak class="btn btn-sm" @click="edit = false">Save</button>
+    </form>
+    <div class="flex items-center gap-4 ml-auto flex-wrap">
+      <div class="gauge" title="Dollars bet today against the daily cap"><span class="v {{ 'bad' if g.spent_today >= g.daily_cap }}">${{ '%g'|format(g.spent_today) }}/{{ '%g'|format(g.daily_cap) }}</span><span class="l">Spent today</span></div>
+      <div class="gauge" title="Combo creations via the API in the last 7 days (Kalshi's limit is 5,000; {{ g.creation_cap - g.creation_usable }} reserved for your phone)"><span class="v">{{ '{:,}'.format(g.creations_week) }}/{{ '{:,}'.format(g.creation_cap) }}</span><span class="l">Creations / wk</span></div>
+      <div class="gauge" title="Identified RFQs sent today from every source ({{ g.mode }} cap)"><span class="v {{ 'bad' if g.id_today >= g.id_cap }}">{{ g.id_today }}/{{ g.id_cap }}</span><span class="l">ID asks today</span></div>
+      <div class="gauge" title="Your combo fills ÷ identified RFQs over 7 days ({{ g.take_rate_7d.fills }} fills / {{ g.take_rate_7d.asks }} asks)"><span class="v {{ 'bad' if g.take_rate_warn }}">{{ fmt(g.take_rate_7d.rate, 'pct') }}</span><span class="l">Take rate 7d</span></div>
+      <div class="gauge" title="RFQs this tool currently has open"><span class="v">{{ g.open_rfqs }}</span><span class="l">Open RFQs</span></div>
+      {% if g.scan_running %}<span class="chip chip-warn">Scan running</span>{% endif %}
+      <button class="btn btn-danger btn-sm" hx-post="/api/kill" hx-swap="none" hx-confirm="Kill switch: turn execution off, stop the scan, cancel every open RFQ this tool created, and pause schedulers?">Kill</button>
+    </div>
+  </div>
+</header>

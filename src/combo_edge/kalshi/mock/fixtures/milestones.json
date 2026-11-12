@@ -1,0 +1,273 @@
+{
+ "milestones": [
+  {
+   "category": "Sports",
+   "details": {
+    "away_team_id": "aa65dda6-9cb8-4c8b-812b-d0c1feaae54f",
+    "broadcasts": [
+     {
+      "name": "Amazon Prime Video",
+      "scope": "national"
+     }
+    ],
+    "home_team_id": "4fa3f3ec-f7e7-41ec-9383-a40af2d26297",
+    "league": "NFL",
+    "main_game_event_ticker": "KXNFLGAME-26NOV12WASNYG",
+    "season": {
+     "type": "REG",
+     "week": 10,
+     "year": 2026
+    },
+    "series_to_stat_mapping": {
+     "KXNFLFFPTS": "fantasy_points",
+     "KXNFLFFPTSLADDER": "fantasy_points",
+     "KXNFLFIRSTTD": "touchdowns",
+     "KXNFLINT": "interceptions",
+     "KXNFLLONGREC": "longest_reception",
+     "KXNFLLONGRSH": "longest_rush",
+     "KXNFLPASSATT": "passing_attempts",
+     "KXNFLPASSCOMP": "passing_completions",
+     "KXNFLPASSINT": "passing_interceptions",
+     "KXNFLPASSTDS": "passing_touchdowns",
+     "KXNFLPASSYDS": "passing_yards",
+     "KXNFLPASSYDSPRECISE": "passing_yards",
+     "KXNFLREC": "receptions",
+     "KXNFLRECYDS": "receiving_yards",
+     "KXNFLRRYDS": "rushing_receiving_yards",
+     "KXNFLRSHATT": "rushing_attempts",
+     "KXNFLRSHYDS": "rushing_yards",
+     "KXNFLSACK": "sacks",
+     "KXNFLTD": "touchdowns",
+     "KXNFLTKL": "tackles"
+    },
+    "series_to_stat_name_mapping": {
+     "KXNFL2TD": "tds",
+     "KXNFLANYTD": "tds",
+     "KXNFLFFPTS": "fantasy points",
+     "KXNFLFFPTSLADDER": "fantasy points",
+     "KXNFLFIRSTTD": "tds",
+     "KXNFLPASSTDS": "pass tds",
+     "KXNFLPASSYDS": "pass yds",
+     "KXNFLREC": "recs",
+     "KXNFLRECYDS": "rec yds",
+     "KXNFLRSHYDS": "rush yds"
+    },
+    "status": "scheduled"
+   },
+   "id": "5d577d84-4a39-4676-8f31-7bb242dab15b",
+   "last_updated_ts": "2026-11-11T15:30:04.638292Z",
+   "notification_message": "The game is about to begin!",
+   "primary_event_tickers": [
+    "KXNFLGAME-26NOV12WASNYG",
+    "KXNFLSPREAD-26NOV12WASNYG",
+    "KXNFLTOTAL-26NOV12WASNYG",
+    "KXNFLTEAMTOTAL-26NOV12WASNYG",
+    "KXNFLDELAY-26NOV12WASNYG"
+   ],
+   "related_event_tickers": [
+    "KXNFLGAME-26NOV12WASNYG",
+    "KXNFLSPREAD-26NOV12WASNYG",
+    "KXNFLTOTAL-26NOV12WASNYG",
+    "KXNFLTEAMTOTAL-26NOV12WASNYG",
+    "KXNFLPASSTDS-26NOV12WASNYG",
+    "KXNFLPASSYDS-26NOV12WASNYG",
+    "KXNFLRECYDS-26NOV12WASNYG",
+    "KXNFLRSHYDS-26NOV12WASNYG",
+    "KXNFLREC-26NOV12WASNYG",
+    "KXNFLTD-26NOV12WASNYG",
+    "KXNFL1H-26NOV12WASNYG",
+    "KXNFL1HSPREAD-26NOV12WASNYG",
+    "KXNFL1HTEAMTOTAL-26NOV12WASNYG",
+    "KXNFLPASSTDSPROT-26NOV12WASNYG",
+    "KXNFLWINMARGIN-26NOV12WASNYG",
+    "KXNFLRRYDS-26NOV12WASNYG",
+    "KXNFLLONGREC-26NOV12WASNYG",
+    "KXNFLDELAY-26NOV12WASNYG"
+   ],
+   "source_id": "5ab9e951-17ea-4e84-9c6c-5ce04ac073ad",
+   "source_ids": {
+    "source_1_id": "2978711",
+    "source_2_id": "2026111371575527",
+    "source_3_id": "5ab9e951-17ea-4e84-9c6c-5ce04ac073ad",
+    "source_6_id": "18041519"
+   },
+   "start_date": "2026-11-13T01:15:00Z",
+   "title": "WAS Commanders at NY Giants",
+   "type": "football_game"
+  },
+  {
+   "category": "Sports",
+   "details": {
+    "away_team_id": "422d5fd7-ad18-4c96-902d-6f7c50e4660f",
+    "broadcasts": [
+     {
+      "name": "CBS",
+      "scope": "national"
+     }
+    ],
+    "home_team_id": "d73dae4f-1f08-4b5e-bf23-4e25e9b6a69c",
+    "league": "NFL",
+    "main_game_event_ticker": "KXNFLGAME-26NOV15LARARI",
+    "season": {
+     "type": "REG",
+     "week": 10,
+     "year": 2026
+    },
+    "series_to_stat_mapping": {
+     "KXNFLFFPTS": "fantasy_points",
+     "KXNFLFFPTSLADDER": "fantasy_points",
+     "KXNFLFIRSTTD": "touchdowns",
+     "KXNFLINT": "interceptions",
+     "KXNFLLONGREC": "longest_reception",
+     "KXNFLLONGRSH": "longest_rush",
+     "KXNFLPASSATT": "passing_attempts",
+     "KXNFLPASSCOMP": "passing_completions",
+     "KXNFLPASSINT": "passing_interceptions",
+     "KXNFLPASSTDS": "passing_touchdowns",
+     "KXNFLPASSYDS": "passing_yards",
+     "KXNFLPASSYDSPRECISE": "passing_yards",
+     "KXNFLREC": "receptions",
+     "KXNFLRECYDS": "receiving_yards",
+     "KXNFLRRYDS": "rushing_receiving_yards",
+     "KXNFLRSHATT": "rushing_attempts",
+     "KXNFLRSHYDS": "rushing_yards",
+     "KXNFLSACK": "sacks",
+     "KXNFLTD": "touchdowns",
+     "KXNFLTKL": "tackles"
+    },
+    "series_to_stat_name_mapping": {
+     "KXNFL2TD": "tds",
+     "KXNFLANYTD": "tds",
+     "KXNFLFFPTS": "fantasy points",
+     "KXNFLFFPTSLADDER": "fantasy points",
+     "KXNFLFIRSTTD": "tds",
+     "KXNFLPASSTDS": "pass tds",
+     "KXNFLPASSYDS": "pass yds",
+     "KXNFLREC": "recs",
+     "KXNFLRECYDS": "rec yds",
+     "KXNFLRSHYDS": "rush yds"
+    },
+    "status": "scheduled"
+   },
+   "id": "90c68784-4470-434c-84b4-39eef0f00e2b",
+   "last_updated_ts": "2026-11-11T20:05:37.053671Z",
+   "notification_message": "The game is about to begin!",
+   "primary_event_tickers": [
+    "KXNFLGAME-26NOV15LARARI",
+    "KXNFLSPREAD-26NOV15LARARI",
+    "KXNFLTOTAL-26NOV15LARARI",
+    "KXNFLTEAMTOTAL-26NOV15LARARI"
+   ],
+   "related_event_tickers": [
+    "KXNFLGAME-26NOV15LARARI",
+    "KXNFLSPREAD-26NOV15LARARI",
+    "KXNFLTOTAL-26NOV15LARARI",
+    "KXNFLTEAMTOTAL-26NOV15LARARI",
+    "KXNFLTD-26NOV15LARARI",
+    "KXNFL1H-26NOV15LARARI",
+    "KXNFL1HSPREAD-26NOV15LARARI",
+    "KXNFL1HTEAMTOTAL-26NOV15LARARI"
+   ],
+   "source_id": "6cd5ee29-ad06-4839-bb7a-326d4e3ca5ae",
+   "source_ids": {
+    "source_1_id": "2978740",
+    "source_2_id": "20261115D4408B10",
+    "source_3_id": "6cd5ee29-ad06-4839-bb7a-326d4e3ca5ae",
+    "source_6_id": "18041521"
+   },
+   "start_date": "2026-11-15T21:05:00Z",
+   "title": "LA Rams at ARI Cardinals",
+   "type": "football_game"
+  },
+  {
+   "category": "Sports",
+   "details": {
+    "away_team_id": "bfaa7639-8bdf-47b2-8d28-98d2cdbefbcb",
+    "broadcasts": [
+     {
+      "name": "FOX",
+      "scope": "national"
+     }
+    ],
+    "home_team_id": "62b97b7c-5503-461c-b328-fd8543219b22",
+    "league": "NFL",
+    "main_game_event_ticker": "KXNFLGAME-26NOV15SFDAL",
+    "season": {
+     "type": "REG",
+     "week": 10,
+     "year": 2026
+    },
+    "series_to_stat_mapping": {
+     "KXNFLFFPTS": "fantasy_points",
+     "KXNFLFFPTSLADDER": "fantasy_points",
+     "KXNFLFIRSTTD": "touchdowns",
+     "KXNFLINT": "interceptions",
+     "KXNFLLONGREC": "longest_reception",
+     "KXNFLLONGRSH": "longest_rush",
+     "KXNFLPASSATT": "passing_attempts",
+     "KXNFLPASSCOMP": "passing_completions",
+     "KXNFLPASSINT": "passing_interceptions",
+     "KXNFLPASSTDS": "passing_touchdowns",
+     "KXNFLPASSYDS": "passing_yards",
+     "KXNFLPASSYDSPRECISE": "passing_yards",
+     "KXNFLREC": "receptions",
+     "KXNFLRECYDS": "receiving_yards",
+     "KXNFLRRYDS": "rushing_receiving_yards",
+     "KXNFLRSHATT": "rushing_attempts",
+     "KXNFLRSHYDS": "rushing_yards",
+     "KXNFLSACK": "sacks",
+     "KXNFLTD": "touchdowns",
+     "KXNFLTKL": "tackles"
+    },
+    "series_to_stat_name_mapping": {
+     "KXNFL2TD": "tds",
+     "KXNFLANYTD": "tds",
+     "KXNFLFFPTS": "fantasy points",
+     "KXNFLFFPTSLADDER": "fantasy points",
+     "KXNFLFIRSTTD": "tds",
+     "KXNFLPASSTDS": "pass tds",
+     "KXNFLPASSYDS": "pass yds",
+     "KXNFLREC": "recs",
+     "KXNFLRECYDS": "rec yds",
+     "KXNFLRSHYDS": "rush yds"
+    },
+    "status": "scheduled"
+   },
+   "id": "a7338768-b435-4b6e-9cbc-1e45b2b44e6a",
+   "last_updated_ts": "2026-11-11T22:35:35.029459Z",
+   "notification_message": "The game is about to begin!",
+   "primary_event_tickers": [
+    "KXNFLGAME-26NOV15SFDAL",
+    "KXNFLSPREAD-26NOV15SFDAL",
+    "KXNFLTOTAL-26NOV15SFDAL",
+    "KXNFLTEAMTOTAL-26NOV15SFDAL"
+   ],
+   "related_event_tickers": [
+    "KXNFLGAME-26NOV15SFDAL",
+    "KXNFLSPREAD-26NOV15SFDAL",
+    "KXNFLTOTAL-26NOV15SFDAL",
+    "KXNFLTEAMTOTAL-26NOV15SFDAL",
+    "KXNFLPASSTDS-26NOV15SFDAL",
+    "KXNFLPASSYDS-26NOV15SFDAL",
+    "KXNFLRECYDS-26NOV15SFDAL",
+    "KXNFLRSHYDS-26NOV15SFDAL",
+    "KXNFLTD-26NOV15SFDAL",
+    "KXNFL1H-26NOV15SFDAL",
+    "KXNFL1HSPREAD-26NOV15SFDAL",
+    "KXNFL1HTEAMTOTAL-26NOV15SFDAL",
+    "KXNFLPASSTDSPROT-26NOV15SFDAL"
+   ],
+   "source_id": "231d7294-7ba0-4b56-9fcf-344026eebcd1",
+   "source_ids": {
+    "source_1_id": "2978747",
+    "source_2_id": "20261115ED92AE3E",
+    "source_3_id": "231d7294-7ba0-4b56-9fcf-344026eebcd1",
+    "source_6_id": "18041607"
+   },
+   "start_date": "2026-11-15T21:25:00Z",
+   "title": "SF 49ers at DAL Cowboys",
+   "type": "football_game"
+  }
+ ],
+ "recorded_at": "2026-11-11"
+}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Bets · Combo Edge{% endblock %}
+{% block content %}
+<div class="flex flex-wrap gap-2 items-center">
+  <a href="/bets?tab=taken&book={{ book }}" class="tab {{ 'active' if tab == 'taken' }}">Bets taken</a>
+  <a href="/bets?tab=pnl&book={{ book }}" class="tab {{ 'active' if tab == 'pnl' }}">P&amp;L</a>
+  {% if tab == 'taken' %}
+  <div class="ml-auto flex gap-1 text-sm">
+    {% for b in ['all', 'real', 'paper'] %}<a href="/bets?tab=taken&book={{ b }}" class="chip {{ 'chip-ok' if book == b }}">{{ b|capitalize }}</a>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% if upgrade_offer %}
+<div class="panel p-3 text-sm flex items-center justify-between gap-3">
+  <span>Your canary passed. You can now ask Kalshi for the <b>Advanced API tier</b> (3× the rate budget).</span>
+  <button class="btn btn-sm btn-primary" hx-post="/api/upgrade-tier" hx-target="next span">Upgrade tier</button><span></span>
+</div>
+{% endif %}
+<div id="bets-body" hx-get="/p/bets?book={{ book }}&tab={{ tab }}" hx-trigger="sse-results from:body, sse-header from:body throttle:3s" hx-swap="innerHTML">
+  {% include "partials/bets_body.html" %}
+</div>
+{% endblock %}

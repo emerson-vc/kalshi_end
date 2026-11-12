@@ -1,0 +1,124 @@
+{% macro chip(text) -%}
+{%- set c = 'chip-ok' if text in ('Bought', 'Paper bought', 'Passes gates') else ('chip-bad' if text.startswith('Cap') or text.startswith('Stale') else ('chip-warn' if text.startswith('Below') else '')) -%}
+<span class="chip {{ c }}">{{ text }}</span>
+{%- endmacro %}
+{% if not done %}
+  <div class="panel empty">Results appear here when a scan finishes.</div>
+{% elif not rows %}
+  <div class="panel empty">The last scan (#{{ done.id }}) found no quoted combos{% if done.summary.get('error') %}: {{ done.summary.error }}{% endif %}.{% if env_name == 'mock' %} The mock exchange is offline data; that's not an error.{% endif %}</div>
+{% else %}
+<div class="panel overflow-hidden">
+  <div class="px-4 py-3 flex flex-wrap justify-between gap-2 text-sm">
+    <span><b>{{ rows|selectattr('id_quoted')|list|length }}</b> ID-quoted · {{ rows|rejectattr('id_quoted')|list|length }} anonymous only · scan #{{ done.id }} ({{ fmt_ago(done.finished_ts) }})</span>
+    <span class="muted text-xs">Sorted by edge at the lower bound. Anonymous-only rows are greyed: they are never bought.</span>
+  </div>
+  <!-- desktop table -->
+  <table class="tbl hidden md:table">
+    <thead><tr>
+      <th>Combo</th>
+      <th class="text-right"><span class="tip" title="Best ID quote, fee included">Pays</span></th>
+      <th class="text-right"><span class="tip" title="Payout at our fair probability">Fair</span></th>
+      <th class="text-right"><span class="tip" title="Fair probability × payout − 1">Edge</span></th>
+      <th class="text-right"><span class="tip" title="Edge at the fair model's lower bound (widens for long shots)">Edge (low)</span></th>
+      <th class="text-right"><span class="tip" title="Makers who quoted">Makers</span></th>
+      <th class="text-right"><span class="tip" title="Seconds since the quote arrived; stale after 3 s">Age</span></th>
+      <th>Status</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for r in rows %}
+    {% set pay = r.id_payout or r.anon_payout %}
+    <tr x-data="{ why: false }" x-show="show($el)" data-payout="{{ pay or 0 }}" data-family="{{ r.family_label }}" data-game="{{ r.matchup }}" data-edge="{{ ((r.edge_lower or -9) * 100)|round(1) }}" data-kickoff="{{ r.kickoff or 0 }}" class="{{ '' if r.id_quoted else 'dim' }}">
+      <td class="max-w-md">
+        <div class="font-semibold">{{ r.leg_a }}</div>
+        <div class="font-semibold">{{ r.leg_b }}</div>
+        <div class="text-xs muted mt-1">{{ r.game }} · {{ r.kickoff_text }} · {{ r.family_label }}</div>
+        <div x-show="why" x-cloak class="mt-3 text-xs space-y-1 border-t border-[var(--border)] pt-2">
+          {% set e = r.explanation %}
+          <div>P(“{{ e.get('A') }}”) = <b class="num">{{ fmt(e.get('pA'), 'pct') }}</b></div>
+          <div>P(“{{ e.get('B') }}” | first leg) = <b class="num">{{ fmt(e.get('cond'), 'pct') }}</b> (on its own {{ fmt(e.get('pB'), 'pct') }})</div>
+          <div>Fair joint {{ '%.2f'|format((e.get('joint') or 0) * 100) }}% ({{ fmt(r.fair_payout, 'payout') }}) vs makers' price {{ '%.2f'|format(100 / pay) if pay else '—' }}% · independent {{ '%.2f'|format((e.get('independent') or 0) * 100) }}% · leg product {{ fmt(r.leg_product, 'payout') }}{% if r.ratio %} · ratio {{ '%.2f'|format(r.ratio) }}{% endif %}</div>
+          <div>Method: {{ e.get('method') }}{% if e.get('history_n') %}; nflverse sample ≈ {{ e.get('history_n') }} games (shift {{ e.get('history_shift') }}){% endif %}; {{ e.get('family_check') }}{% if e.get('capped') %}; {{ e.get('capped')|join(', ') }}{% endif %}</div>
+          <div>Anonymous quote: {{ fmt(r.anon_payout, 'payout') }} ({{ r.anon_makers or 0 }} makers){% if r.id_payout and r.anon_payout %} — ID pays {{ '%.1f'|format(r.id_payout / r.anon_payout) }}× as much{% endif %}</div>
+          {% for l in e.get('legs', []) %}{% if l.check_by_hand %}<div class="text-[var(--warn)]">Check “{{ l.wording }}” by hand (e.g. OddsJam): Kalshi {{ fmt(l.p_market, 'pct') }} vs model {{ fmt(l.p_model, 'pct') }}.</div>{% endif %}{% endfor %}
+          <div class="italic">{{ e.get('sentence') }} {{ r.maker_sentence }}</div>
+        </div>
+      </td>
+      <td class="text-right num"><span class="text-xl font-bold">{{ fmt(pay, 'payout') }}</span>{% if not r.id_quoted %}<div class="text-[10px] muted">anonymous</div>{% endif %}</td>
+      <td class="text-right num muted">{{ fmt(r.fair_payout, 'payout') }}</td>
+      <td class="text-right num font-semibold {{ 'pos' if (r.edge or -1) > 0 else 'neg' }}">{{ fmt(r.edge, 'edge') }}</td>
+      <td class="text-right num {{ 'pos' if (r.edge_lower or -1) > 0 else 'neg' }}">{{ fmt(r.edge_lower, 'edge') }}</td>
+      <td class="text-right num">{{ r.makers or 0 }}</td>
+      <td class="text-right num"><span data-quote-ts="{{ r.quote_ts or '' }}">{{ '—' if not r.quote_ts }}</span></td>
+      <td class="space-y-1">
+        {{ chip(r.chip) }}
+        {% if r.required_ev is not none %}<div class="text-[11px] muted">needs {{ fmt(r.required_ev, 'edge') }}{% if r.stake %} · ${{ '%g'|format(r.stake) }}{% endif %}</div>{% endif %}
+        {% if r.reason %}<div class="text-[11px] muted max-w-[14rem]">{{ r.reason }}</div>{% endif %}
+      </td>
+      <td class="whitespace-nowrap space-y-1 text-right">
+        <button class="btn btn-sm" hx-post="/api/refresh/{{ r.candidate_id }}" hx-target="next .rmsg" hx-indicator="this" title="New RFQ under your ID (uses 1 of today's ID asks). Buys only if it passes the gates and execution is Real/Paper.">Refresh price <span class="spinner"></span></button>
+        <div class="rmsg text-[11px]"></div>
+        <button class="btn btn-sm" onclick='ceCopy({{ (r.leg_a ~ "\n" ~ r.leg_b)|tojson }}, this)'>Copy legs</button>
+        <a class="btn btn-sm" href="{{ r.kalshi_url }}" target="_blank" rel="noopener">Open in Kalshi</a>
+        <button class="btn btn-sm" @click="why = !why">Why</button>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <!-- phone cards -->
+  <div class="md:hidden divide-y divide-[var(--border)]">
+    {% for r in rows %}
+    {% set pay = r.id_payout or r.anon_payout %}
+    <div class="p-4 space-y-2 {{ '' if r.id_quoted else 'opacity-60' }}" x-data="{ why: false }" x-show="show($el)" data-payout="{{ pay or 0 }}" data-family="{{ r.family_label }}" data-game="{{ r.matchup }}" data-edge="{{ ((r.edge_lower or -9) * 100)|round(1) }}" data-kickoff="{{ r.kickoff or 0 }}">
+      <div class="flex justify-between items-start gap-3">
+        <div class="text-sm font-semibold">{{ r.leg_a }}<br>{{ r.leg_b }}</div>
+        <div class="text-right"><div class="text-2xl font-bold num">{{ fmt(pay, 'payout') }}</div><div class="text-[10px] muted">{{ 'ID quote' if r.id_quoted else 'anonymous' }}</div></div>
+      </div>
+      <div class="text-xs muted">{{ r.matchup }} · {{ r.kickoff_text }}</div>
+      <div class="flex flex-wrap gap-3 text-sm num">
+        <span>Fair <b>{{ fmt(r.fair_payout, 'payout') }}</b></span>
+        <span class="{{ 'pos' if (r.edge or -1) > 0 else 'neg' }}">Edge <b>{{ fmt(r.edge, 'edge') }}</b></span>
+        <span class="{{ 'pos' if (r.edge_lower or -1) > 0 else 'neg' }}">Low {{ fmt(r.edge_lower, 'edge') }}</span>
+        <span>{{ r.makers or 0 }} makers</span>
+        <span>Age <span data-quote-ts="{{ r.quote_ts or '' }}">—</span></span>
+      </div>
+      <div class="flex flex-wrap gap-2 items-center">{{ chip(r.chip) }}{% if r.required_ev is not none %}<span class="text-[11px] muted">needs {{ fmt(r.required_ev, 'edge') }}</span>{% endif %}</div>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn btn-sm" hx-post="/api/refresh/{{ r.candidate_id }}" hx-swap="none">Refresh price (1 ID ask)</button>
+        <button class="btn btn-sm" onclick='ceCopy({{ (r.leg_a ~ "\n" ~ r.leg_b)|tojson }}, this)'>Copy legs</button>
+        <a class="btn btn-sm" href="{{ r.kalshi_url }}" target="_blank" rel="noopener">Kalshi</a>
+        <button class="btn btn-sm" @click="why = !why">Why</button>
+      </div>
+      <div x-show="why" x-cloak class="text-xs italic">{{ r.explanation.get('sentence') }} {{ r.maker_sentence }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% if done %}
+{% set sm = done.summary %}
+<div class="grid md:grid-cols-2 gap-4">
+  <div class="panel p-4 text-sm space-y-1">
+    <h3 class="font-bold mb-2">Run summary</h3>
+    <div>{{ sm.get('games', 0) }} games · {{ '{:,}'.format(sm.get('legs', 0)) }} legs · {{ '{:,}'.format(sm.get('candidates', 0)) }} candidates · {{ sm.get('selected', 0) }} selected</div>
+    <div>Resolution: {% for k, v in (sm.get('resolution') or {}).items() %}{{ k.replace('_', ' ') }} {{ v }}{{ ', ' if not loop.last }}{% endfor %}</div>
+    <div>Anonymous: {{ sm.get('anon_quoted', 0) }}/{{ sm.get('anon_sent', 0) }} quoted · ID: {{ sm.get('id_quoted', 0) }}/{{ sm.get('id_sent', 0) }} quoted · bought {{ sm.get('bought', 0) }}</div>
+    <div class="muted">RFQ outcomes: {% for k, v in (sm.get('rfq_outcomes') or {}).items() %}{{ k }} {{ v }}{{ ', ' if not loop.last }}{% endfor %}</div>
+    {% if sm.get('promoted') %}<div class="pos">New families promoted from exploration: {{ sm.promoted|join(', ') }}</div>{% endif %}
+    {% if sm.get('id_budget_note') %}<div class="text-[var(--warn)]">{{ sm.id_budget_note }}</div>{% endif %}
+    {% if sm.get('maker_model') %}<div class="muted">Maker model: {{ sm.maker_model.get('rows') }} ID quotes, {{ 'fitted' if sm.maker_model.get('fitted') else 'using the 0.9 × leg product prior' }}</div>{% endif %}
+    {% for e in sm.get('universe_errors', []) %}<div class="muted">{{ e }}</div>{% endfor %}
+  </div>
+  <div class="panel p-4 text-sm">
+    <h3 class="font-bold mb-2">Coverage</h3>
+    <table class="tbl">
+      <thead><tr><th>Game</th><th class="text-right">Legs</th><th class="text-right">Candidates</th></tr></thead>
+      <tbody>{% for g in (sm.get('coverage') or {}).get('games', []) %}
+        <tr class="{{ 'bad' if g.red }}"><td>{{ g.matchup }}{% if g.red %} <span class="chip chip-bad">props, no candidates</span>{% elif not g.player_props %} <span class="muted text-xs">no player props yet</span>{% endif %}</td><td class="text-right num">{{ g.legs }}</td><td class="text-right num">{{ g.candidates }}</td></tr>
+      {% endfor %}</tbody>
+    </table>
+    {% set up = (sm.get('coverage') or {}).get('unparsed', []) %}
+    {% if up %}<div class="mt-3 text-xs muted">Unparsed legs: {% for u in up[:6] %}<b>{{ u.series }}</b> ×{{ u.count }} (e.g. “{{ u.examples[0] }}”){{ '; ' if not loop.last }}{% endfor %}</div>{% endif %}
+  </div>
+</div>
+{% endif %}

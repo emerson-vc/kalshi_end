@@ -1,0 +1,9 @@
+# Only the root data folder (DB, logs, nflverse cache). Do NOT ignore every data/ folder:
+# v1 did that and hid the mock fixtures.
+/data/
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store

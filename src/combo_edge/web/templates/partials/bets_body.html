@@ -1,0 +1,77 @@
+{% if tab == 'taken' %}
+<div class="grid md:grid-cols-3 gap-4">
+  <div class="panel p-4">
+    <div class="text-xs muted uppercase tracking-wide">Spent today ({{ cur_book }})</div>
+    <div class="text-2xl font-bold num">${{ '%.2f'|format(exposure.spent_today) }} <span class="text-base muted">/ ${{ '%g'|format(s.get('daily_spend_cap')) }}</span></div>
+    <div class="h-2 rounded bg-[var(--panel-2)] mt-2"><div class="h-2 rounded bg-[var(--accent)]" style="width: {{ [100, (exposure.spent_today / s.get('daily_spend_cap') * 100)]|min }}%"></div></div>
+  </div>
+  <div class="panel p-4 text-sm">
+    <div class="text-xs muted uppercase tracking-wide mb-1">Bets per game (cap {{ s.get('max_bets_per_game') }})</div>
+    {% for g, n in exposure.games %}<div class="flex justify-between"><span>{{ g }}</span><span class="num {{ 'bad' if n >= s.get('max_bets_per_game') }}">{{ n }}</span></div>{% else %}<div class="muted">None yet</div>{% endfor %}
+  </div>
+  <div class="panel p-4 text-sm">
+    <div class="text-xs muted uppercase tracking-wide mb-1">Bets per player (cap {{ s.get('max_bets_per_player') }})</div>
+    {% for p, n in exposure.players %}<div class="flex justify-between"><span>{{ p }}</span><span class="num {{ 'bad' if n >= s.get('max_bets_per_player') }}">{{ n }}</span></div>{% else %}<div class="muted">None yet</div>{% endfor %}
+  </div>
+</div>
+<div class="panel overflow-hidden">
+  {% if not bets %}<div class="empty">No bets yet. In Paper mode, a scan books what it would have bought here.</div>{% else %}
+  <table class="tbl hidden md:table">
+    <thead><tr><th>Book</th><th>Combo</th><th class="text-right">Pays</th><th class="text-right">Stake</th><th class="text-right">Edge at buy</th><th>Kickoff</th><th>Status</th><th class="text-right">Latest re-quote</th><th class="text-right"><span class="tip" title="Our payout vs the payout near kickoff">CLV</span></th><th></th></tr></thead>
+    <tbody>{% for b in bets %}
+      <tr>
+        <td><span class="chip {{ 'chip-bad' if b.book == 'real' else '' }}">{{ b.book|upper }}{% if b.is_canary %} · canary{% endif %}</span></td>
+        <td class="max-w-sm">{% for l in b.legs %}<div class="font-semibold">{{ l.wording }}</div>{% endfor %}</td>
+        <td class="text-right num font-bold">{{ fmt(b.payout, 'payout') }}</td>
+        <td class="text-right num">${{ '%g'|format(b.stake) }}</td>
+        <td class="text-right num {{ 'pos' if (b.ev or 0) > 0 else 'neg' }}">{{ fmt(b.ev, 'edge') }}</td>
+        <td class="text-xs">{{ b.kickoff_text }}</td>
+        <td><span class="chip {{ 'chip-ok' if b.status_text == 'won' else ('chip-bad' if b.status_text in ('lost', 'side_mismatch') else '') }}">{{ b.status_text.replace('_', ' ') }}</span>{% if b.pnl is not none %}<div class="text-xs num {{ 'pos' if b.pnl > 0 else 'bad' }}">{{ money.fmt_money(b.pnl) }}</div>{% endif %}</td>
+        <td class="text-right num">{{ fmt(b.latest_requote, 'payout') }}</td>
+        <td class="text-right num {{ 'pos' if (b.clv or 0) > 0 else 'neg' }}">{{ fmt(b.clv, 'edge') }}</td>
+        <td>{% if b.status_text == 'open' %}<button class="btn btn-sm" hx-post="/api/recheck/{{ b.id }}" hx-target="next span" title="New RFQ under your ID (uses 1 ID ask; never buys)">Re-check</button><span class="text-[11px]"></span>{% endif %}</td>
+      </tr>{% endfor %}
+    </tbody>
+  </table>
+  <div class="md:hidden divide-y divide-[var(--border)]">{% for b in bets %}
+    <div class="p-4 space-y-1">
+      <div class="flex justify-between"><span class="chip {{ 'chip-bad' if b.book == 'real' }}">{{ b.book|upper }}</span><span class="font-bold num text-lg">{{ fmt(b.payout, 'payout') }}</span></div>
+      {% for l in b.legs %}<div class="text-sm font-semibold">{{ l.wording }}</div>{% endfor %}
+      <div class="text-xs muted">${{ '%g'|format(b.stake) }} · edge {{ fmt(b.ev, 'edge') }} · {{ b.kickoff_text }} · {{ b.status_text }}{% if b.clv is not none %} · CLV {{ fmt(b.clv, 'edge') }}{% endif %}</div>
+    </div>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+<div class="panel overflow-hidden">
+  <div class="px-4 py-3 font-bold">Decision log <span class="muted text-xs font-normal">— every ID quote the executor looked at, bought or not, with the reason</span></div>
+  {% if not log %}<div class="empty">No decisions yet.</div>{% else %}
+  <div class="overflow-x-auto"><table class="tbl">
+    <thead><tr><th>When</th><th>Mode</th><th>Combo</th><th class="text-right">Pays</th><th class="text-right">Edge</th><th class="text-right">Needs</th><th>Action</th><th>Reason</th></tr></thead>
+    <tbody>{% for d in log %}
+      <tr><td class="text-xs whitespace-nowrap">{{ d.when }}</td><td class="text-xs">{{ d.mode }}</td><td class="text-xs max-w-xs">{{ d.label }}</td>
+        <td class="text-right num">{{ fmt(d.payout, 'payout') }}</td><td class="text-right num {{ 'pos' if (d.ev or -1) > 0 else 'neg' }}">{{ fmt(d.ev, 'edge') }}</td>
+        <td class="text-right num muted">{{ fmt(d.required_ev, 'edge') }}</td><td><span class="chip {{ 'chip-ok' if d.action == 'buy' }}">{{ d.action }}</span></td><td class="text-xs">{{ d.reason }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>{% endif %}
+</div>
+{% else %}
+{% for b in ['real', 'paper'] %}{% set p = pnl[b] %}
+<section class="panel p-4 space-y-4">
+  <div class="flex flex-wrap items-baseline gap-6">
+    <h2 class="text-lg font-bold">{{ b|capitalize }} book</h2>
+    <div class="gauge"><span class="v {{ 'pos' if p.pnl > 0 else ('bad' if p.pnl < 0) }}">{{ money.fmt_money(p.pnl) }}</span><span class="l">P&amp;L (settled)</span></div>
+    <div class="gauge"><span class="v">{{ fmt(p.roi, 'edge') }}</span><span class="l">ROI</span></div>
+    <div class="gauge"><span class="v">{{ fmt(p.win_rate, 'pct') }} <span class="muted text-xs">vs {{ fmt(p.expected_win_rate, 'pct') }} expected</span></span><span class="l">Win rate</span></div>
+    <div class="gauge"><span class="v">{{ p.n_settled }}/{{ p.n_bets }}</span><span class="l">Settled / bets</span></div>
+  </div>
+  <div>{{ charts[b]|safe }}</div>
+  <div class="grid md:grid-cols-2 gap-4 text-sm">
+    {% for title, rows in [('By week', p.by_week), ('By combo type', p.by_type)] %}
+    <div><h3 class="font-semibold mb-1">{{ title }}</h3>
+      <table class="tbl"><thead><tr><th></th><th class="text-right">Bets</th><th class="text-right">P&amp;L</th><th class="text-right">ROI</th><th class="text-right">CLV</th></tr></thead>
+      <tbody>{% for r in rows %}<tr><td>{{ r.key }}</td><td class="text-right num">{{ r.n }}</td><td class="text-right num {{ 'pos' if r.pnl > 0 else ('bad' if r.pnl < 0) }}">{{ money.fmt_money(r.pnl) }}</td><td class="text-right num">{{ fmt(r.roi, 'edge') }}</td><td class="text-right num">{{ fmt(r.clv, 'edge') }}</td></tr>{% else %}<tr><td colspan="5" class="muted">No bets yet</td></tr>{% endfor %}</tbody></table>
+    </div>{% endfor %}
+  </div>
+</section>
+{% endfor %}
+{% endif %}

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combo Edge</title><link rel="stylesheet" href="/static/app.css"><script src="/static/app.js"></script></head>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <form method="post" action="/login" class="panel p-6 w-full max-w-xs space-y-3">
+    <h1 class="text-lg font-bold">Combo Edge</h1>
+    <p class="text-sm muted">Enter the passcode from your .env (COMBO_EDGE_LAN_PASSCODE).</p>
+    <input class="input" type="password" name="passcode" autofocus autocomplete="current-password">
+    {% if error %}<p class="text-sm bad">Wrong passcode.</p>{% endif %}
+    <button class="btn btn-primary w-full justify-center">Open dashboard</button>
+  </form>
+</body></html>

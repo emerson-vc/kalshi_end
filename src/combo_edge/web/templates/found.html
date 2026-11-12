@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Found · Combo Edge{% endblock %}
+{% block content %}
+<section class="panel p-4 space-y-4">
+  <form class="flex flex-wrap items-end gap-3" hx-post="/api/scan" hx-target="#scan-msg" hx-indicator="#scan-spin">
+    <button class="btn btn-primary text-base px-5 py-2.5" {% if h.scan_running or h.killed %}disabled{% endif %}>
+      <span id="scan-spin" class="spinner"></span> Run scan
+    </button>
+    <label class="text-xs muted">Stake ($)
+      <input class="input num w-20" type="number" name="stake" step="1" min="1" value="{{ s.get('stake')|int }}" title="Target cost for the anonymous screen RFQs"></label>
+    <label class="text-xs muted">Combos to look up
+      <input class="input num w-24" type="number" name="budget_n" min="1" value="{{ s.get('creation_budget_per_run') }}" title="Most combos looked up or created this scan"></label>
+    <label class="text-xs muted">ID shortlist
+      <input class="input num w-20" type="number" name="id_shortlist" min="0" value="{{ s.get('id_shortlist_per_run') }}" title="Combos re-quoted under your ID"></label>
+    <label class="text-sm flex items-center gap-2 pb-2"><input type="checkbox" name="dry_run" value="1"> Dry run <span class="muted text-xs">(never buys)</span></label>
+    <div class="text-xs muted pb-2 leading-relaxed">
+      Sends up to <b>{{ s.get('creation_budget_per_run') }}</b> anonymous RFQs + up to <b>{{ [s.get('id_shortlist_per_run'), id_left]|min }}</b> ID RFQs
+      ({{ id_left }} ID asks left today). {% if h.mode == 'real' %}<b class="bad">Buys automatically if a quote passes the gates.</b>{% elif h.mode == 'paper' %}Paper mode: records what it would buy.{% else %}Execution off: never buys.{% endif %}<br>
+      Next automatic scan: {% if next_scan %}<b>{{ fmt_kickoff(next_scan) }}</b>{% else %}not scheduled (install the daily scan on System){% endif %}
+    </div>
+    <span id="scan-msg" class="pb-2"></span>
+  </form>
+  <div id="pipeline" hx-get="/p/pipeline" hx-trigger="sse-pipeline from:body throttle:400ms" hx-swap="innerHTML">
+    {% include "partials/pipeline.html" %}
+  </div>
+</section>
+
+<section x-data="ceFilters({lo: {{ band[0] }}, hi: {{ band[1] }}})" x-init="$watch('$data', () => save())" class="space-y-3">
+  <div class="panel p-3 flex flex-wrap gap-3 items-end text-xs">
+    <label class="muted">Payout band
+      <div class="flex items-center gap-2 mt-1">
+        <input type="range" min="2" max="100" step="1" x-model.number="lo" class="w-24"><span class="num font-semibold text-[var(--text)]" x-text="lo + 'x'"></span>
+        <span>to</span>
+        <input type="range" min="5" max="200" step="1" x-model.number="hi" class="w-24"><span class="num font-semibold text-[var(--text)]" x-text="hi + 'x'"></span>
+      </div></label>
+    <label class="muted">Family<select x-model="family" class="input mt-1"><option value="">All</option>{% for f in families %}<option>{{ f }}</option>{% endfor %}</select></label>
+    <label class="muted">Game<select x-model="game" class="input mt-1"><option value="">All</option>{% for g in games %}<option>{{ g }}</option>{% endfor %}</select></label>
+    <label class="muted">Kickoff<select x-model="window" class="input mt-1"><option value="all">Any time</option><option value="72h">Within 3 days</option><option value="24h">Within 24 h</option></select></label>
+    <label class="muted">Min edge (%)<input type="number" x-model.number="minEdge" class="input num w-20 mt-1"></label>
+  </div>
+  <div id="results" hx-get="/p/results" hx-trigger="sse-results from:body" hx-swap="innerHTML">
+    {% include "partials/results.html" %}
+  </div>
+</section>
+{% endblock %}

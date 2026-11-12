@@ -1,0 +1,19 @@
+{% if run %}
+<div class="space-y-2">
+  <div class="flex items-center justify-between text-xs muted">
+    <span>Scan #{{ run.id }} · {{ run.kind }} · {{ 'running' if run.status == 'running' else run.status }} · started {{ fmt_ago(run.started_ts) }}</span>
+    <span>{{ run.progress.get('message', '') }}</span>
+  </div>
+  <div class="grid grid-cols-4 md:grid-cols-8 gap-2">
+    {% for key, st in (run.progress.get('stages') or {}).items() %}
+    <div class="stage {{ st.state }}" title="{{ st.label }}">
+      <span class="count">{{ '{:,}'.format(st.count) if st.count is not none else '·' }}</span>
+      <span class="lbl">{{ st.label }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% if run.error %}<div class="text-sm bad">Scan error: {{ run.error }}</div>{% endif %}
+</div>
+{% else %}
+<div class="empty">No scans yet. Press <b>Run scan</b> to look at every game in this NFL week.</div>
+{% endif %}

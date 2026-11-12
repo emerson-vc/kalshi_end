@@ -1,0 +1,44 @@
+[project]
+name = "combo-edge"
+version = "2.0.0"
+description = "Finds and bets +EV Kalshi NFL same-game combos priced through identified RFQs"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "jinja2>=3.1",
+    "httpx>=0.27",
+    "websockets>=13.0",
+    "cryptography>=43.0",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0",
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "scikit-learn>=1.5",
+    "pandas>=2.2",
+    "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+combo-edge = "combo_edge.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytailwindcss>=0.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/combo_edge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-q"

@@ -1,0 +1,1496 @@
+{
+ "multivariate_contracts": [
+  {
+   "associated_event_tickers": [
+    "KXNFLGAME-26NOV12WASNYG",
+    "KXNFLSPREAD-26NOV12WASNYG",
+    "KXNFLTOTAL-26NOV12WASNYG",
+    "KXNFLTEAMTOTAL-26NOV12WASNYG",
+    "KXNFL1HTEAMTOTAL-26NOV12WASNYG",
+    "KXNFLTD-26NOV12WASNYG",
+    "KXNFLFIRSTTD-26NOV12WASNYG",
+    "KXNFLRECYDS-26NOV12WASNYG",
+    "KXNFLRSHYDS-26NOV12WASNYG",
+    "KXNFLPASSTDS-26NOV12WASNYG",
+    "KXNFLPASSYDS-26NOV12WASNYG",
+    "KXNFLTEAMFIRSTTD-26NOV12WASNYG-NYG",
+    "KXNFLTEAMFIRSTTD-26NOV12WASNYG-WAS",
+    "KXNFLFIRSTTDTEAM-26NOV12WASNYG",
+    "KXNFLWINMARGIN-26NOV12WASNYG",
+    "KXNFLREC-26NOV12WASNYG",
+    "KXNFLPASSATT-26NOV12WASNYG",
+    "KXNFLPASSCOMP-26NOV12WASNYG",
+    "KXNFLRSHATT-26NOV12WASNYG",
+    "KXNFLPASSINT-26NOV12WASNYG",
+    "KXNFLRRYDS-26NOV12WASNYG",
+    "KXNFL1H-26NOV12WASNYG",
+    "KXNFL1HSPREAD-26NOV12WASNYG",
+    "KXNFL1HTOTAL-26NOV12WASNYG",
+    "KXNFL1Q-26NOV12WASNYG",
+    "KXNFL1QSPREAD-26NOV12WASNYG",
+    "KXNFL1QTOTAL-26NOV12WASNYG",
+    "KXNFLGAME-26NOV15LARARI",
+    "KXNFLSPREAD-26NOV15LARARI",
+    "KXNFLTOTAL-26NOV15LARARI",
+    "KXNFLTEAMTOTAL-26NOV15LARARI",
+    "KXNFL1HTEAMTOTAL-26NOV15LARARI",
+    "KXNFLTD-26NOV15LARARI",
+    "KXNFLFIRSTTD-26NOV15LARARI",
+    "KXNFL1H-26NOV15LARARI",
+    "KXNFL1HSPREAD-26NOV15LARARI",
+    "KXNFL1HTOTAL-26NOV15LARARI",
+    "KXNFL1Q-26NOV15LARARI",
+    "KXNFL1QSPREAD-26NOV15LARARI",
+    "KXNFL1QTOTAL-26NOV15LARARI",
+    "KXNFLGAME-26NOV15SFDAL",
+    "KXNFLSPREAD-26NOV15SFDAL",
+    "KXNFLTOTAL-26NOV15SFDAL",
+    "KXNFLTEAMTOTAL-26NOV15SFDAL",
+    "KXNFL1HTEAMTOTAL-26NOV15SFDAL",
+    "KXNFLTD-26NOV15SFDAL",
+    "KXNFLFIRSTTD-26NOV15SFDAL",
+    "KXNFLPASSYDS-26NOV15SFDAL",
+    "KXNFL1H-26NOV15SFDAL",
+    "KXNFL1HSPREAD-26NOV15SFDAL",
+    "KXNFL1HTOTAL-26NOV15SFDAL",
+    "KXNFL1Q-26NOV15SFDAL",
+    "KXNFL1QSPREAD-26NOV15SFDAL",
+    "KXNFL1QTOTAL-26NOV15SFDAL",
+    "KXNFLRECYDS-26NOV15SFDAL",
+    "KXNFLRSHYDS-26NOV15SFDAL",
+    "KXNFLPASSTDS-26NOV15SFDAL",
+    "KXNFLTDPROT-26NOV12WASNYG",
+    "KXNFLTDPROT-26NOV15LARARI",
+    "KXNFLTDPROT-26NOV15SFDAL",
+    "KXNFLPASSYDSPROT-26NOV12WASNYG",
+    "KXNFLPASSYDSPROT-26NOV15SFDAL",
+    "KXNFLRECYDSPROT-26NOV12WASNYG",
+    "KXNFLRECYDSPROT-26NOV15SFDAL",
+    "KXNFLRSHYDSPROT-26NOV12WASNYG",
+    "KXNFLRSHYDSPROT-26NOV15SFDAL",
+    "KXNFLRECPROT-26NOV12WASNYG",
+    "KXNFLPASSTDSPROT-26NOV12WASNYG",
+    "KXNFLPASSTDSPROT-26NOV15SFDAL",
+    "KXNFLPASSYDSPRECISE-26NOV12WASNYG",
+    "KXNFLTOTALPRECISE-26NOV12WASNYG"
+   ],
+   "associated_events": [
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLGAME-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLSPREAD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTEAMTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFL1HTEAMTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTEAMFIRSTTD-26NOV12WASNYG-NYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTEAMFIRSTTD-26NOV12WASNYG-WAS"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTDTEAM-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLWINMARGIN-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLREC-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSATT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSCOMP-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHATT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSINT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRRYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1H-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HSPREAD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1Q-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QSPREAD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLGAME-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLSPREAD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTEAMTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFL1HTEAMTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1H-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HSPREAD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1Q-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QSPREAD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLGAME-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLSPREAD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTEAMTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFL1HTEAMTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1H-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HSPREAD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1Q-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QSPREAD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTDPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTDPROT-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTDPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDSPRECISE-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTOTALPRECISE-26NOV12WASNYG"
+    }
+   ],
+   "close_date": "2028-01-14T15:00:00Z",
+   "collection_ticker": "KXMVESPORTSMULTIGAMEEXTENDED-R",
+   "description": "Choose any combination of game stats and props.",
+   "exchange_index": 1,
+   "functional_description": "The resulting market will only resolve to YES if every associated market resolves to YES. Scalar outcomes are multiplied (rounded down).",
+   "is_all_yes": false,
+   "is_ordered": false,
+   "is_single_market_per_event": false,
+   "open_date": "2026-11-11T18:13:15Z",
+   "price_level_structure": "center_deci_edge_centi_cent",
+   "price_ranges": [
+    {
+     "end": "0.0100",
+     "start": "0.0000",
+     "step": "0.0001"
+    },
+    {
+     "end": "0.9900",
+     "start": "0.0100",
+     "step": "0.0010"
+    },
+    {
+     "end": "1.0000",
+     "start": "0.9900",
+     "step": "0.0001"
+    }
+   ],
+   "series_ticker": "KXMVESPORTSMULTIGAMEEXTENDED",
+   "size_max": 0,
+   "size_min": 2,
+   "title": "What will happen across all games?"
+  },
+  {
+   "associated_event_tickers": [
+    "KXNFLGAME-26NOV12WASNYG",
+    "KXNFLSPREAD-26NOV12WASNYG",
+    "KXNFLTOTAL-26NOV12WASNYG",
+    "KXNFLTEAMTOTAL-26NOV12WASNYG",
+    "KXNFL1HTEAMTOTAL-26NOV12WASNYG",
+    "KXNFLTD-26NOV12WASNYG",
+    "KXNFLFIRSTTD-26NOV12WASNYG",
+    "KXNFLRECYDS-26NOV12WASNYG",
+    "KXNFLRSHYDS-26NOV12WASNYG",
+    "KXNFLPASSTDS-26NOV12WASNYG",
+    "KXNFLPASSYDS-26NOV12WASNYG",
+    "KXNFLTEAMFIRSTTD-26NOV12WASNYG-NYG",
+    "KXNFLTEAMFIRSTTD-26NOV12WASNYG-WAS",
+    "KXNFLFIRSTTDTEAM-26NOV12WASNYG",
+    "KXNFLWINMARGIN-26NOV12WASNYG",
+    "KXNFLREC-26NOV12WASNYG",
+    "KXNFLPASSATT-26NOV12WASNYG",
+    "KXNFLPASSCOMP-26NOV12WASNYG",
+    "KXNFLRSHATT-26NOV12WASNYG",
+    "KXNFLPASSINT-26NOV12WASNYG",
+    "KXNFLRRYDS-26NOV12WASNYG",
+    "KXNFL1H-26NOV12WASNYG",
+    "KXNFL1HSPREAD-26NOV12WASNYG",
+    "KXNFL1HTOTAL-26NOV12WASNYG",
+    "KXNFL1Q-26NOV12WASNYG",
+    "KXNFL1QSPREAD-26NOV12WASNYG",
+    "KXNFL1QTOTAL-26NOV12WASNYG",
+    "KXNFLGAME-26NOV15LARARI",
+    "KXNFLSPREAD-26NOV15LARARI",
+    "KXNFLTOTAL-26NOV15LARARI",
+    "KXNFLTEAMTOTAL-26NOV15LARARI",
+    "KXNFL1HTEAMTOTAL-26NOV15LARARI",
+    "KXNFLTD-26NOV15LARARI",
+    "KXNFLFIRSTTD-26NOV15LARARI",
+    "KXNFL1H-26NOV15LARARI",
+    "KXNFL1HSPREAD-26NOV15LARARI",
+    "KXNFL1HTOTAL-26NOV15LARARI",
+    "KXNFL1Q-26NOV15LARARI",
+    "KXNFL1QSPREAD-26NOV15LARARI",
+    "KXNFL1QTOTAL-26NOV15LARARI",
+    "KXNFLGAME-26NOV15SFDAL",
+    "KXNFLSPREAD-26NOV15SFDAL",
+    "KXNFLTOTAL-26NOV15SFDAL",
+    "KXNFLTEAMTOTAL-26NOV15SFDAL",
+    "KXNFL1HTEAMTOTAL-26NOV15SFDAL",
+    "KXNFLTD-26NOV15SFDAL",
+    "KXNFLFIRSTTD-26NOV15SFDAL",
+    "KXNFLPASSYDS-26NOV15SFDAL",
+    "KXNFL1H-26NOV15SFDAL",
+    "KXNFL1HSPREAD-26NOV15SFDAL",
+    "KXNFL1HTOTAL-26NOV15SFDAL",
+    "KXNFL1Q-26NOV15SFDAL",
+    "KXNFL1QSPREAD-26NOV15SFDAL",
+    "KXNFL1QTOTAL-26NOV15SFDAL",
+    "KXNFLRECYDS-26NOV15SFDAL",
+    "KXNFLRSHYDS-26NOV15SFDAL",
+    "KXNFLPASSTDS-26NOV15SFDAL",
+    "KXNFLTDPROT-26NOV12WASNYG",
+    "KXNFLTDPROT-26NOV15LARARI",
+    "KXNFLTDPROT-26NOV15SFDAL",
+    "KXNFLPASSYDSPROT-26NOV12WASNYG",
+    "KXNFLPASSYDSPROT-26NOV15SFDAL",
+    "KXNFLRECYDSPROT-26NOV12WASNYG",
+    "KXNFLRECYDSPROT-26NOV15SFDAL",
+    "KXNFLRSHYDSPROT-26NOV12WASNYG",
+    "KXNFLRSHYDSPROT-26NOV15SFDAL",
+    "KXNFLRECPROT-26NOV12WASNYG",
+    "KXNFLPASSTDSPROT-26NOV12WASNYG",
+    "KXNFLPASSTDSPROT-26NOV15SFDAL",
+    "KXNFLPASSYDSPRECISE-26NOV12WASNYG",
+    "KXNFLTOTALPRECISE-26NOV12WASNYG"
+   ],
+   "associated_events": [
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLGAME-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLSPREAD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTEAMTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFL1HTEAMTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTEAMFIRSTTD-26NOV12WASNYG-NYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTEAMFIRSTTD-26NOV12WASNYG-WAS"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTDTEAM-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLWINMARGIN-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLREC-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSATT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSCOMP-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHATT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSINT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRRYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1H-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HSPREAD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1Q-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QSPREAD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLGAME-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLSPREAD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTEAMTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFL1HTEAMTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1H-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HSPREAD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1Q-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QSPREAD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLGAME-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLSPREAD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTEAMTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFL1HTEAMTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1H-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HSPREAD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1Q-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QSPREAD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTDPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTDPROT-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTDPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDSPRECISE-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTOTALPRECISE-26NOV12WASNYG"
+    }
+   ],
+   "close_date": "2028-01-14T15:00:00Z",
+   "collection_ticker": "KXMVECROSSCATEGORY-SHARD1-R",
+   "description": "Choose any combination of game stats and props.",
+   "exchange_index": 1,
+   "functional_description": "The resulting market will only resolve to YES if every associated market resolves to YES. Scalar outcomes are multiplied (rounded down).",
+   "is_all_yes": false,
+   "is_ordered": false,
+   "is_single_market_per_event": false,
+   "open_date": "2026-11-11T18:13:15Z",
+   "price_level_structure": "center_deci_edge_centi_cent",
+   "price_ranges": [
+    {
+     "end": "0.0100",
+     "start": "0.0000",
+     "step": "0.0001"
+    },
+    {
+     "end": "0.9900",
+     "start": "0.0100",
+     "step": "0.0010"
+    },
+    {
+     "end": "1.0000",
+     "start": "0.9900",
+     "step": "0.0001"
+    }
+   ],
+   "series_ticker": "KXMVECROSSCATEGORY-SHARD1",
+   "size_max": 0,
+   "size_min": 2,
+   "title": "Will multiple conditions be met?"
+  },
+  {
+   "associated_event_tickers": [
+    "KXNFLGAME-26NOV12WASNYG",
+    "KXNFLSPREAD-26NOV12WASNYG",
+    "KXNFLTOTAL-26NOV12WASNYG",
+    "KXNFLTEAMTOTAL-26NOV12WASNYG",
+    "KXNFL1HTEAMTOTAL-26NOV12WASNYG",
+    "KXNFLTD-26NOV12WASNYG",
+    "KXNFLFIRSTTD-26NOV12WASNYG",
+    "KXNFLRECYDS-26NOV12WASNYG",
+    "KXNFLRSHYDS-26NOV12WASNYG",
+    "KXNFLPASSTDS-26NOV12WASNYG",
+    "KXNFLPASSYDS-26NOV12WASNYG",
+    "KXNFLTEAMFIRSTTD-26NOV12WASNYG-NYG",
+    "KXNFLTEAMFIRSTTD-26NOV12WASNYG-WAS",
+    "KXNFLFIRSTTDTEAM-26NOV12WASNYG",
+    "KXNFLWINMARGIN-26NOV12WASNYG",
+    "KXNFLREC-26NOV12WASNYG",
+    "KXNFLPASSATT-26NOV12WASNYG",
+    "KXNFLPASSCOMP-26NOV12WASNYG",
+    "KXNFLRSHATT-26NOV12WASNYG",
+    "KXNFLPASSINT-26NOV12WASNYG",
+    "KXNFLRRYDS-26NOV12WASNYG",
+    "KXNFL1H-26NOV12WASNYG",
+    "KXNFL1HSPREAD-26NOV12WASNYG",
+    "KXNFL1HTOTAL-26NOV12WASNYG",
+    "KXNFL1Q-26NOV12WASNYG",
+    "KXNFL1QSPREAD-26NOV12WASNYG",
+    "KXNFL1QTOTAL-26NOV12WASNYG",
+    "KXNFLGAME-26NOV15LARARI",
+    "KXNFLSPREAD-26NOV15LARARI",
+    "KXNFLTOTAL-26NOV15LARARI",
+    "KXNFLTEAMTOTAL-26NOV15LARARI",
+    "KXNFL1HTEAMTOTAL-26NOV15LARARI",
+    "KXNFLTD-26NOV15LARARI",
+    "KXNFLFIRSTTD-26NOV15LARARI",
+    "KXNFL1H-26NOV15LARARI",
+    "KXNFL1HSPREAD-26NOV15LARARI",
+    "KXNFL1HTOTAL-26NOV15LARARI",
+    "KXNFL1Q-26NOV15LARARI",
+    "KXNFL1QSPREAD-26NOV15LARARI",
+    "KXNFL1QTOTAL-26NOV15LARARI",
+    "KXNFLGAME-26NOV15SFDAL",
+    "KXNFLSPREAD-26NOV15SFDAL",
+    "KXNFLTOTAL-26NOV15SFDAL",
+    "KXNFLTEAMTOTAL-26NOV15SFDAL",
+    "KXNFL1HTEAMTOTAL-26NOV15SFDAL",
+    "KXNFLTD-26NOV15SFDAL",
+    "KXNFLFIRSTTD-26NOV15SFDAL",
+    "KXNFLPASSYDS-26NOV15SFDAL",
+    "KXNFL1H-26NOV15SFDAL",
+    "KXNFL1HSPREAD-26NOV15SFDAL",
+    "KXNFL1HTOTAL-26NOV15SFDAL",
+    "KXNFL1Q-26NOV15SFDAL",
+    "KXNFL1QSPREAD-26NOV15SFDAL",
+    "KXNFL1QTOTAL-26NOV15SFDAL",
+    "KXNFLRECYDS-26NOV15SFDAL",
+    "KXNFLRSHYDS-26NOV15SFDAL",
+    "KXNFLPASSTDS-26NOV15SFDAL",
+    "KXNFLTDPROT-26NOV12WASNYG",
+    "KXNFLTDPROT-26NOV15LARARI",
+    "KXNFLTDPROT-26NOV15SFDAL",
+    "KXNFLPASSYDSPROT-26NOV12WASNYG",
+    "KXNFLPASSYDSPROT-26NOV15SFDAL",
+    "KXNFLRECYDSPROT-26NOV12WASNYG",
+    "KXNFLRECYDSPROT-26NOV15SFDAL",
+    "KXNFLRSHYDSPROT-26NOV12WASNYG",
+    "KXNFLRSHYDSPROT-26NOV15SFDAL",
+    "KXNFLRECPROT-26NOV12WASNYG",
+    "KXNFLPASSTDSPROT-26NOV12WASNYG",
+    "KXNFLPASSTDSPROT-26NOV15SFDAL",
+    "KXNFLPASSYDSPRECISE-26NOV12WASNYG",
+    "KXNFLTOTALPRECISE-26NOV12WASNYG"
+   ],
+   "associated_events": [
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLGAME-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLSPREAD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTEAMTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFL1HTEAMTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTEAMFIRSTTD-26NOV12WASNYG-NYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTEAMFIRSTTD-26NOV12WASNYG-WAS"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTDTEAM-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLWINMARGIN-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLREC-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSATT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSCOMP-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHATT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSINT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRRYDS-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1H-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HSPREAD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1Q-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QSPREAD-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QTOTAL-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLGAME-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLSPREAD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTEAMTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFL1HTEAMTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1H-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HSPREAD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1Q-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QSPREAD-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QTOTAL-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLGAME-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLSPREAD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTEAMTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFL1HTEAMTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFLFIRSTTD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1H-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HSPREAD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1HTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1Q-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QSPREAD-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "size_max": 1,
+     "ticker": "KXNFL1QTOTAL-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDS-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTDPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTDPROT-26NOV15LARARI"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTDPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECYDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRSHYDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLRECPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDSPROT-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSTDSPROT-26NOV15SFDAL"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLPASSYDSPRECISE-26NOV12WASNYG"
+    },
+    {
+     "active_quoters": [],
+     "is_yes_only": false,
+     "ticker": "KXNFLTOTALPRECISE-26NOV12WASNYG"
+    }
+   ],
+   "close_date": "2028-01-14T15:00:00Z",
+   "collection_ticker": "KXMVECROSSCATEGORY-R",
+   "description": "Choose any combination of game stats and props.",
+   "exchange_index": 1,
+   "functional_description": "The resulting market will only resolve to YES if every associated market resolves to YES. Scalar outcomes are multiplied (rounded down).",
+   "is_all_yes": false,
+   "is_ordered": false,
+   "is_single_market_per_event": false,
+   "open_date": "2026-11-11T18:13:15Z",
+   "price_level_structure": "center_deci_edge_centi_cent",
+   "price_ranges": [
+    {
+     "end": "0.0100",
+     "start": "0.0000",
+     "step": "0.0001"
+    },
+    {
+     "end": "0.9900",
+     "start": "0.0100",
+     "step": "0.0010"
+    },
+    {
+     "end": "1.0000",
+     "start": "0.9900",
+     "step": "0.0001"
+    }
+   ],
+   "series_ticker": "KXMVECROSSCATEGORY",
+   "size_max": 0,
+   "size_min": 2,
+   "title": "Will multiple conditions be met?"
+  }
+ ],
+ "recorded_at": "2026-11-11"
+}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Combo Edge{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css?v={{ build_time|urlencode }}">
+  <script src="/static/app.js?v={{ build_time|urlencode }}"></script>
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/alpine.min.js" defer></script>
+</head>
+<body class="min-h-screen">
+  <div id="header" hx-get="/p/header?page={{ page }}" hx-trigger="sse-header from:body" hx-swap="innerHTML">
+    {% include "partials/header.html" %}
+  </div>
+  <nav class="max-w-7xl mx-auto px-4 mt-4 flex gap-1 overflow-x-auto">
+    <a href="/" class="tab {{ 'active' if page == 'found' }}">Found</a>
+    <a href="/bets" class="tab {{ 'active' if page == 'bets' }}">Bets</a>
+    <a href="/insights" class="tab {{ 'active' if page == 'insights' }}">Insights</a>
+    <a href="/system" class="tab {{ 'active' if page == 'system' }}">System</a>
+  </nav>
+  <main class="max-w-7xl mx-auto px-4 py-4 space-y-4">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="max-w-7xl mx-auto px-4 py-6 text-xs muted flex justify-between">
+    <span>Combo Edge v{{ version }} · code from {{ build_time }}</span>
+    <button class="underline" onclick="ceToggleTheme()">Light / dark</button>
+  </footer>
+  <div id="toasts" class="fixed bottom-4 right-4 left-4 sm:left-auto flex flex-col gap-2 items-end z-50"></div>
+</body>
+</html>

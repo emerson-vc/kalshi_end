@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Insights · Combo Edge{% endblock %}
+{% macro edge_table(title, rows) %}
+<div class="panel p-4 text-sm"><h3 class="font-bold mb-2">{{ title }}</h3>
+  {% if not rows %}<div class="muted">No ID quotes yet.</div>{% else %}
+  <table class="tbl"><thead><tr><th></th><th class="text-right">ID quotes</th><th class="text-right">Avg edge</th><th class="text-right">95% interval</th></tr></thead>
+  <tbody>{% for k, v in rows.items() %}<tr><td>{{ k }}</td><td class="text-right num">{{ v.n }}</td><td class="text-right num {{ 'pos' if (v.mean or 0) > 0 else 'neg' }}">{{ fmt(v.mean, 'edge') }}</td><td class="text-right num muted">{% if v.lo is not none %}{{ fmt(v.lo, 'edge') }} to {{ fmt(v.hi, 'edge') }}{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table>{% endif %}
+</div>
+{% endmacro %}
+{% block content %}
+<section class="panel p-4">
+  <h2 class="font-bold">When to press Run</h2>
+  <p class="text-sm mt-1">{{ when.text }}</p>
+</section>
+<div class="grid md:grid-cols-2 gap-4">
+  <div class="panel p-4 text-sm space-y-2">
+    <h3 class="font-bold">ID vs anonymous</h3>
+    <div>Same combos quoted both ways: ID pays <b class="num">{{ '%.2f'|format(gap.gap) if gap.gap else '—' }}×</b> the anonymous price (n={{ gap.n }}).</div>
+    <div class="{{ 'bad font-semibold' if fade.warning else '' }}">Fade monitor: {% if fade.warning %}the ID/anonymous gap is shrinking — makers may be treating you like anonymous flow.{% elif fade.series %}gap stable ({{ fade.series|length }} weeks).{% else %}no weekly control quotes yet (the re-quote agent runs them once a week).{% endif %}</div>
+    {% if fade.series %}<table class="tbl"><thead><tr><th>Week</th><th class="text-right">ID ÷ anon</th><th class="text-right">ID ÷ leg product</th></tr></thead><tbody>
+      {% for w in fade.series %}<tr><td>{{ w.week }}</td><td class="text-right num">{{ '%.2f'|format(w.gap) }}</td><td class="text-right num">{{ '%.2f'|format(w.id_vs_product) if w.id_vs_product else '—' }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+  </div>
+  <div class="panel p-4 text-sm"><h3 class="font-bold mb-2">Take rate by week</h3>{{ take_chart|safe }}</div>
+</div>
+<div class="grid md:grid-cols-2 gap-4">
+  {{ edge_table("Edge by family", edge.get('family')) }}
+  {{ edge_table("Edge by payout", edge.get('payout')) }}
+  <div class="panel p-4 text-sm"><h3 class="font-bold mb-2">Edge by hours to kickoff</h3>{{ hours_chart|safe }}</div>
+  {{ edge_table("Edge by day of week", edge.get('dow')) }}
+  {{ edge_table("Edge by leg liquidity", edge.get('liquidity')) }}
+  <div class="panel p-4 text-sm space-y-1"><h3 class="font-bold mb-2">Maker model</h3>
+    {% for k, m in maker.items() %}<div><b>{{ 'ID' if k == 'maker_id' else 'Anonymous (screen only)' }}:</b> {{ m.get('rows') }} quotes · {% if m.get('fitted') %}holdout error {{ '%.3f'|format(m.get('holdout_mae_log_ratio') or 0) }} (baseline {{ '%.3f'|format(m.get('baseline_mae') or 0) }}) · drift {{ '%+.3f'|format(m.get('drift_7d_mean_residual') or 0) }}{% else %}not fitted yet (needs 30){% endif %}</div>{% else %}<div class="muted">No model runs yet.</div>{% endfor %}
+  </div>
+</div>
+<section class="panel p-4 text-sm">
+  <h3 class="font-bold mb-2">Calibration per family (nflverse history)</h3>
+  <div class="grid md:grid-cols-2 gap-4">{% for fam, r in calib.items() %}
+    <div><div class="flex items-center gap-2"><b>{{ fam }}</b><span class="chip {{ 'chip-ok' if r.status == 'pass' else ('chip-bad' if r.status == 'fail' else '') }}">{{ r.status.replace('_', ' ') }}</span></div>
+      {% if r.get('cells') %}<div class="muted text-xs">error vs history: simulator {{ fmt(r.mae_raw, 'pct') }} → after shift {{ '%.1f'|format(r.mae_shifted * 100) }}% · {{ r.n }} history samples</div>
+      <table class="tbl text-xs mt-1"><thead><tr><th>Legs</th><th class="text-right">Implied</th><th class="text-right">n</th><th class="text-right">History</th><th class="text-right">Sim</th><th class="text-right">Shifted</th></tr></thead><tbody>
+      {% for e in r.examples %}<tr><td>{{ e.a }} / {{ e.b }}</td><td class="text-right">{{ e.implied }}</td><td class="text-right">{{ e.n }}</td><td class="text-right">{{ fmt(e.history, 'pct') }}</td><td class="text-right">{{ fmt(e.sim, 'pct') }}</td><td class="text-right">{{ fmt(e.shifted, 'pct') }}</td></tr>{% endfor %}</tbody></table>
+      {% else %}<div class="muted text-xs">{{ r.get('note') }}</div>{% endif %}</div>{% endfor %}
+  </div>
+  {% if truth %}<div class="mt-3"><b>Settled bets:</b> {% for f, t in truth.items() %}{{ f }} {{ fmt(t.actual, 'pct') }} won vs {{ fmt(t.expected, 'pct') }} expected (n={{ t.n }}){{ '; ' if not loop.last }}{% endfor %}</div>{% endif %}
+</section>
+<div class="grid md:grid-cols-2 gap-4">
+  <div class="panel p-4 text-sm"><h3 class="font-bold mb-2">Bandit strata {% if promoted %}<span class="chip chip-ok">promoted: {{ promoted|length }}</span>{% endif %}</h3>
+    {% if arms %}<table class="tbl text-xs"><thead><tr><th>Stratum</th><th class="text-right">n</th><th class="text-right">CLV obs</th><th class="text-right">Reward</th></tr></thead><tbody>
+    {% for a in arms %}<tr><td>{{ a.arm }}{% if a.promoted %} <span class="chip chip-ok">family</span>{% endif %}</td><td class="text-right">{{ a.n }}</td><td class="text-right">{{ a.n_clv }}</td><td class="text-right">{{ '%+.2f'|format(a.mean) }}</td></tr>{% endfor %}</tbody></table>{% else %}<div class="muted">No observations yet.</div>{% endif %}
+  </div>
+  <div class="panel p-4 text-sm"><h3 class="font-bold mb-2">Maker roster</h3>
+    {% if roster %}<table class="tbl text-xs"><thead><tr><th>Maker</th><th class="text-right">Anon RFQs</th><th class="text-right">ID RFQs</th><th></th></tr></thead><tbody>
+    {% for m in roster %}<tr><td class="font-mono">{{ m.maker }}…</td><td class="text-right">{{ m.anonymous }}</td><td class="text-right">{{ m.id }}</td><td>{% if m.id_only %}<span class="chip chip-warn">ID only</span>{% endif %}</td></tr>{% endfor %}</tbody></table>{% else %}<div class="muted">No quotes yet.</div>{% endif %}
+  </div>
+</div>
+{% endblock %}
