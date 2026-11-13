@@ -33,6 +33,7 @@ from typing import Any
 from combo_edge import money
 from combo_edge.kalshi.transport import Response
 from combo_edge.paths import MOCK_FIXTURES
+from combo_edge.timeutil import gameweek_end
 
 PLACEHOLDER_CREATOR = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 MY_COMMS_ID = "mock-me-0001"
@@ -156,10 +157,18 @@ class MockExchange:
         evs = json.loads((d / "events.json").read_text())["events"]
         self.collections = json.loads((d / "collections.json").read_text())["multivariate_contracts"]
         starts = [_parse_ts(m["start_date"]) for m in ms]
-        shift = (time.time() + first_in_h * 3600) - min(starts)
+        t0, span = min(starts), max(starts) - min(starts)
+        # keep the whole slate inside the current NFL gameweek (it ends Tuesday 06:00 ET), whatever today is:
+        # slide it earlier if it would spill over, and compress the spacing if it still doesn't fit
+        now = time.time()
+        end = gameweek_end(now) - 3600
+        first = now + first_in_h * 3600
+        if first + span > end:
+            first = max(now + 600, end - span)
+        scale = min(1.0, max(end - first, 0.0) / span) if span > 0 else 1.0
         for m in ms:
             m = json.loads(json.dumps(m))
-            m["start_date"] = _iso(_parse_ts(m["start_date"]) + shift)
+            m["start_date"] = _iso(first + (_parse_ts(m["start_date"]) - t0) * scale)
             self.milestones.append(m)
         for e in evs:
             self.events[e["event_ticker"]] = e

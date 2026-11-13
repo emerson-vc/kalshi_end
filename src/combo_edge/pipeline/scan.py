@@ -20,7 +20,7 @@ from combo_edge.execution.executor import DecisionContext, Executor, Timing
 from combo_edge.jobs.killswitch import is_killed
 from combo_edge.kalshi.session import Session, build_session
 from combo_edge.learning.bandit import Bandit
-from combo_edge.learning.maker_model import MakerModel, candidate_features
+from combo_edge.learning.maker_model import MakerModel, anon_maker_count, candidate_features, quote_features
 from combo_edge.pipeline import budget, portfolio
 from combo_edge.pipeline.budget import IdBudgetExhausted
 from combo_edge.pipeline.quotes import QuoteBook, RfqOutcome, RfqRunner, sweep_pending_cancels
@@ -155,7 +155,14 @@ async def run_scan(params: ScanParams, *, session: Session | None = None, db: DB
             except Exception as e:  # history is optional
                 log.warning("nflverse unavailable: %s", e)
         id_model = MakerModel(db, "id")
-        summary["maker_model"] = id_model.fit()
+        try:
+            summary["maker_model"] = id_model.fit()
+        except Exception as e:  # a bad fit must never stop the scan: fall back to the built-in estimate
+            log.exception("maker model fit failed")
+            db.log("error", "maker_model", f"fit failed, using the built-in estimate: {type(e).__name__}: {e}")
+            id_model.model, id_model.columns = None, []
+            summary["maker_model"] = {"rows": id_model.metrics.get("rows", 0), "fitted": False, "status": "error",
+                                      "error": f"{type(e).__name__}: {e}"}
         rejected = rejected_class_set(db)
         cands: list[Candidate] = []
         per_game: dict[str, int] = {}
@@ -212,8 +219,10 @@ async def run_scan(params: ScanParams, *, session: Session | None = None, db: DB
 
         async def screen(c: Candidate) -> None:
             nonlocal done
+            fd = feed_demand(db, c.combo_ticker)
+            c.extra["feed_demand"] = fd
             out = await runner.run_one(c.combo_ticker, "anonymous", stake=stake, purpose="screen", candidate_id=c.db_id,
-                                       kickoff_ts=c.game.start_ts, feed_demand=feed_demand(db, c.combo_ticker))
+                                       kickoff_ts=c.game.start_ts, feed_demand=fd, features=quote_features(c, feed_demand=fd))
             anon[id(c)] = out
             done += 1
             if done % 5 == 0:
@@ -243,16 +252,19 @@ async def run_scan(params: ScanParams, *, session: Session | None = None, db: DB
             if bool(s.get("require_history_calibration")) and fam_note.startswith("no history"):
                 fam_ok = False
             ctx = DecisionContext(c, planned, run_id, dry_run=params.dry_run, family_ok=fam_ok, family_note=fam_note)
+            fd = feed_demand(db, c.combo_ticker)
+            feats = quote_features(c, feed_demand=fd, anon=anon.get(id(c)))
             try:
                 out = await runner.run_one(c.combo_ticker, "id", stake=planned, purpose="shortlist", candidate_id=c.db_id,
-                                           kickoff_ts=c.game.start_ts, feed_demand=feed_demand(db, c.combo_ticker),
+                                           kickoff_ts=c.game.start_ts, feed_demand=fd, features=feats,
                                            decide=lambda o, r, ctx=ctx: executor.consider(o, ctx))
                 d = out.decision
                 if d is not None and d.requote:
                     ctx.planned_stake = d.requote_stake or planned
                     ctx.extra["requoted"] = True
                     out = await runner.run_one(c.combo_ticker, "id", stake=ctx.planned_stake, purpose="requote_stale", candidate_id=c.db_id,
-                                               kickoff_ts=c.game.start_ts, decide=lambda o, r, ctx=ctx: executor.consider(o, ctx))
+                                               kickoff_ts=c.game.start_ts, feed_demand=fd, features=feats,
+                                               decide=lambda o, r, ctx=ctx: executor.consider(o, ctx))
             except IdBudgetExhausted as e:
                 summary["id_budget_note"] = str(e)
                 events.toast("ID budget used up for today: identified RFQs stopped", "warn")
@@ -339,7 +351,7 @@ def build_shortlist(resolved: list[Candidate], anon: dict[int, RfqOutcome], mode
         if o is not None and o.outcome in ("rejected_combo", "conflict_409", "create_error", "aborted"):
             continue
         ap = o.best_payout if o else None
-        pay, src = model.predict_id_payout(c, ap, o.n_makers if o else None)
+        pay, src = model.predict_id_payout(c, ap, anon_maker_count(o))
         c.pred_id_payout, c.pred_source = pay, src
         lower = c.fair.lower(max(pay, c.fair.fair_payout), s)
         c.pred_ev = c.fair.fair_joint * pay - 1

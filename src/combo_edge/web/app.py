@@ -455,8 +455,11 @@ def create_app(*, lan: bool = False, argv: list[str] | None = None) -> FastAPI:
     async def api_fit() -> Any:
         from combo_edge.learning.maker_model import MakerModel
 
-        m = await asyncio.to_thread(MakerModel(db(), "id").fit)
-        return msg(f"Maker model: {m.get('rows')} ID quotes, {'fitted' if m.get('fitted') else 'not enough data yet (needs 30)'}", "info")
+        try:
+            m = await asyncio.to_thread(MakerModel(db(), "id").fit)
+        except Exception as e:
+            return msg(f"Maker model fit failed ({type(e).__name__}); scans use the built-in estimate", "error")
+        return msg(f"Maker model: {m.get('rows')} ID quotes, {'fitted' if m.get('fitted') else 'not enough data yet: ' + str(m.get('reason', ''))}", "info")
 
     @app.get("/api/state")
     async def api_state() -> Any:

@@ -62,3 +62,40 @@ async def test_kill_switch_blocks_scan(session, db, fast_settings):
     assert db.get_state("execution_mode") == "off"
     resume(db)
     assert db.get_state("execution_mode") == "off"
+
+
+async def test_scan_saves_quote_stage_features(session, exchange, db, fast_settings):
+    import json
+
+    db.set_state("execution_mode", "paper")
+    summary = await run_scan(ScanParams(), session=session, db=db, settings=fast_settings, timing=FAST)
+    assert "error" not in summary, summary.get("error")
+    ids = db.query("SELECT r.features_json, a.n_makers AS anon_n, a.best_payout AS anon_pay FROM rfqs r "
+                   "LEFT JOIN rfqs a ON a.candidate_id=r.candidate_id AND a.identity='anonymous' "
+                   "WHERE r.identity='id' AND r.status='closed'")
+    assert ids
+    for r in ids:
+        f = json.loads(r["features_json"])
+        assert f["existed"] in (0, 1)
+        assert f["feed_demand"] is not None
+        assert f["anon_makers"] == r["anon_n"]
+        assert (f["anon_log_ratio"] is not None) == bool(r["anon_pay"])
+    for r in db.query("SELECT features_json FROM rfqs WHERE identity='anonymous' AND status='closed'"):
+        f = json.loads(r["features_json"])
+        assert f["existed"] in (0, 1) and f["feed_demand"] is not None
+        assert f["anon_log_ratio"] is None and f["anon_makers"] is None  # it is the anonymous quote
+
+
+async def test_scan_survives_maker_model_crash(session, exchange, db, fast_settings, monkeypatch):
+    from combo_edge.learning.maker_model import MakerModel
+
+    def boom(self):
+        raise ValueError("window shape cannot be larger than input array shape")
+
+    monkeypatch.setattr(MakerModel, "fit", boom)
+    db.set_state("execution_mode", "paper")
+    summary = await run_scan(ScanParams(), session=session, db=db, settings=fast_settings, timing=FAST)
+    assert "error" not in summary, summary.get("error")
+    assert summary["maker_model"]["status"] == "error" and not summary["maker_model"]["fitted"]
+    assert summary["id_sent"] > 0  # fell back to the built-in estimate and kept going
+    assert db.scalar("SELECT COUNT(*) FROM events_log WHERE source='maker_model'") >= 1

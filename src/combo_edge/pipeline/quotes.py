@@ -221,16 +221,20 @@ class RfqRunner:
         return True if ws is None else ws.blinked_between(t0, t1)
 
     async def run_one(self, combo_ticker: str, identity: Identity, *, stake: float, purpose: str, candidate_id: int | None = None,
-                      kickoff_ts: float | None = None, feed_demand: int | None = None, decide: DecideFn | None = None) -> RfqOutcome:
+                      kickoff_ts: float | None = None, feed_demand: int | None = None, decide: DecideFn | None = None,
+                      features: dict | None = None) -> RfqOutcome:
+        """`features` is the maker-model feature dict as known when this RFQ is sent; it's saved on the rfqs row
+        so training sees exactly what was known at quote time."""
         if self.abort():
             return RfqOutcome(None, combo_ticker, identity, "aborted")
         if identity == "id":
             budget.check_id_budget(self.settings, self.db, self.env)
         async with self._slots:
-            return await self._run(combo_ticker, identity, stake, purpose, candidate_id, kickoff_ts, feed_demand, decide)
+            return await self._run(combo_ticker, identity, stake, purpose, candidate_id, kickoff_ts, feed_demand, decide, features)
 
     async def _run(self, combo_ticker: str, identity: Identity, stake: float, purpose: str, candidate_id: int | None,
-                   kickoff_ts: float | None, feed_demand: int | None, decide: DecideFn | None) -> RfqOutcome:
+                   kickoff_ts: float | None, feed_demand: int | None, decide: DecideFn | None,
+                   features: dict | None = None) -> RfqOutcome:
         sent = time.time()
         try:
             rfq_id = await self.client.create_rfq(combo_ticker, target_cost=stake, anonymous=(identity == "anonymous"))
@@ -245,7 +249,7 @@ class RfqRunner:
             "id": rfq_id, "env": self.env, "run_id": self.run_id, "candidate_id": candidate_id, "combo_ticker": combo_ticker,
             "identity": identity, "purpose": purpose, "stake": stake, "created_ts": sent,
             "hours_to_kickoff": ((kickoff_ts - sent) / 3600) if kickoff_ts else None, "kickoff_ts": kickoff_ts,
-            "status": "open", "feed_demand": feed_demand,
+            "status": "open", "feed_demand": feed_demand, "features_json": dumps(features) if features is not None else None,
         })
         out = RfqOutcome(rfq_id, combo_ticker, identity, "no_quotes_timeout", state=st)
         executed = False

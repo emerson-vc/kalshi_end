@@ -70,7 +70,8 @@ CREATE TABLE IF NOT EXISTS rfqs (
   identity TEXT NOT NULL CHECK (identity IN ('anonymous','id')), purpose TEXT, stake REAL,
   created_ts REAL, hours_to_kickoff REAL, kickoff_ts REAL, status TEXT, outcome TEXT, deleted_ts REAL,
   time_to_first_quote_ms REAL, n_makers INTEGER, best_payout REAL, second_payout REAL,
-  best_yes_cost REAL, error TEXT, ws_blinked INTEGER, used_rest INTEGER, feed_demand INTEGER);
+  best_yes_cost REAL, error TEXT, ws_blinked INTEGER, used_rest INTEGER, feed_demand INTEGER,
+  features_json TEXT);
 CREATE INDEX IF NOT EXISTS rfqs_created ON rfqs(env, created_ts);
 CREATE INDEX IF NOT EXISTS rfqs_combo ON rfqs(combo_ticker);
 
@@ -168,6 +169,16 @@ class DB:
         self._conn.execute("PRAGMA synchronous=NORMAL")
         self._conn.execute("PRAGMA busy_timeout=30000")
         self._conn.executescript(SCHEMA)
+        self._migrate()
+
+    # columns added after the first release; CREATE TABLE IF NOT EXISTS won't add them to an existing DB
+    _ADDED_COLUMNS = (("rfqs", "features_json", "TEXT"),)
+
+    def _migrate(self) -> None:
+        for table, col, typ in self._ADDED_COLUMNS:
+            have = {r[1] for r in self._conn.execute(f"PRAGMA table_info({table})")}
+            if col not in have:
+                self._conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
 
     # --- raw helpers -------------------------------------------------------------
     def execute(self, sql: str, params: Iterable[Any] = ()) -> sqlite3.Cursor:
