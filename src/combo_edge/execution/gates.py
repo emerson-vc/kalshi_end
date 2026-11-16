@@ -1,9 +1,16 @@
 """Execution gates and sizing (pure functions, fully unit-tested).
 
 Gates, all on an ID quote:
-* required EV after fees rises with payout (curve interpolated in log-payout; above 50x: +100%);
+* required EV after fees rises smoothly with payout: the curve is interpolated in log-payout with no
+  jumps (default +8% at 3x, +18% at 20x, +35% at 50x, +45% at 75x, +55% at 100x, +85% at 200x) and
+  above its last point (200x) +100% is required;
 * EV must stay positive at the fair model's lower bound;
 * the family's conditional passes its history calibration check;
+* "too good to be true": EV above +80% with 8+ makers quoting is never auto-bought (yellow "check by
+  hand") — unless the combo is near-locked, neither leg is thin and the history n is at least 100 (those
+  really are priced that badly);
+* neither leg has the model and the market more than 2x apart ("model disagrees with market": never
+  auto-bought; the fair value there rests on a leg the simulator can't reproduce);
 * the quote is at most 3 s old;
 * the stake fits every cap: $5 per combo, $30 per day, 3 bets per game, 2 per player, never the
   exact same combo twice (different lines are different combos).
@@ -19,13 +26,15 @@ from typing import Any
 from combo_edge import money
 
 
-def required_ev(payout: float, curve: list[list[float]], longshot_payout: float = 50.0, longshot_ev: float = 1.0) -> float:
-    if payout > longshot_payout:
-        return longshot_ev
+def required_ev(payout: float, curve: list[list[float]], beyond_ev: float = 1.0) -> float:
+    """Required EV at ``payout``: the curve interpolated in log-payout; flat below its first point,
+    ``beyond_ev`` above its last point."""
     pts = sorted((float(p), float(e)) for p, e in curve)
     if payout <= pts[0][0]:
         return pts[0][1]
-    if payout >= pts[-1][0]:
+    if payout > pts[-1][0]:
+        return float(beyond_ev)
+    if payout == pts[-1][0]:
         return pts[-1][1]
     lx = math.log(payout)
     for (p0, e0), (p1, e1) in zip(pts, pts[1:]):
@@ -33,6 +42,10 @@ def required_ev(payout: float, curve: list[list[float]], longshot_payout: float 
             t = (lx - math.log(p0)) / (math.log(p1) - math.log(p0))
             return e0 + t * (e1 - e0)
     return pts[-1][1]
+
+
+def required_ev_for(payout: float, s: Any) -> float:
+    return required_ev(payout, s.get("payout_curve"), float(s.get("beyond_curve_required_ev") or 1.0))
 
 
 @dataclass
@@ -56,6 +69,10 @@ class GateInput:
     game_id: str
     players: list[str]
     rfq_stake: float
+    model_disagrees: list[str] = field(default_factory=list)
+    n_makers: int = 0
+    near_lock: dict | None = None
+    thin_legs: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -86,7 +103,7 @@ def size_stake(fair: float, fair_lower: float, payout: float, ev: float, req: fl
 
 
 def evaluate(g: GateInput, exp: Exposure, s: Any) -> GateResult:
-    req = required_ev(g.payout, s.get("payout_curve"), float(s.get("longshot_payout")), float(s.get("longshot_required_ev")))
+    req = required_ev_for(g.payout, s)
     ev = money.ev(g.fair_joint, g.payout)
     evl = money.ev(g.fair_lower, g.payout)
 
@@ -96,11 +113,15 @@ def evaluate(g: GateInput, exp: Exposure, s: Any) -> GateResult:
     if g.identity != "id":
         return no("anonymous quote: never executed (re-quote under your ID first)", "Below gate (anonymous)")
     if ev < req:
-        if g.payout > float(s.get("longshot_payout")):
-            return no(f"above {s.get('longshot_payout'):g}x needs +{req:.0%} EV (has {ev:+.0%})", f"Below gate (needs +{req:.0%})")
         return no(f"EV {ev:+.0%} below the +{req:.0%} needed at {g.payout:.1f}x", f"Below gate (needs +{req:.0%})")
     if evl <= 0:
         return no(f"EV at the lower bound is {evl:+.0%}", "Below gate (lower bound)")
+    if ev > float(s.get("too_good_ev") or 0.80) and g.n_makers >= int(s.get("too_good_min_makers") or 8):
+        exempt = bool(g.near_lock) and not g.thin_legs and int((g.near_lock or {}).get("n") or 0) >= int(s.get("too_good_exempt_min_n") or 100)
+        if not exempt:
+            return no(f"EV {ev:+.0%} with {g.n_makers} makers quoting looks too good to be true: check by hand", "Check by hand")
+    if g.model_disagrees:
+        return no("model disagrees with market (> 2x) on " + "; ".join(g.model_disagrees) + ": not auto-bought", "Model disagrees with market")
     if not g.family_ok:
         return no(g.family_note, "Below gate (calibration)")
     stake = size_stake(g.fair_joint, g.fair_lower, g.payout, ev, req, s)

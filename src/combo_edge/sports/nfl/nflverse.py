@@ -139,6 +139,85 @@ def history_cells() -> list[dict]:
     return cells
 
 
+LIFT_REC_YDS = (19.5, 29.5, 39.5, 49.5, 59.5, 69.5, 79.5, 89.5, 99.5, 109.5, 124.5, 149.5, 174.5)
+LIFT_QB_YDS = (174.5, 199.5, 224.5, 249.5, 274.5, 299.5, 324.5, 349.5)
+LIFT_PTS = tuple(x + 0.5 for x in range(13, 42))  # every team-total rung 13.5 … 41.5
+LIFT_MARGIN = 0.10           # caps are the empirical lift's 95% upper bound × (1 + this)
+LIFT_BASELINE_FILE = Path(__file__).with_name("lift_baseline.json")
+
+
+def receiver_classes(sp: Any) -> Any:
+    """WR/TE player-games with a class: TE, or WR1 / WR2 / WR3+ by season targets among the team's WRs."""
+    rec = sp[sp.position.isin(["WR", "TE"])].copy()
+    st = rec[rec.position == "WR"].groupby(["season", "team", "player_id"]).targets.sum().reset_index()
+    st["rank"] = st.groupby(["season", "team"]).targets.rank(ascending=False, method="first")
+    st["cls"] = st["rank"].map(lambda r: "WR1" if r == 1 else ("WR2" if r == 2 else "WR3+"))
+    rec = rec.merge(st[["season", "team", "player_id", "cls"]], on=["season", "team", "player_id"], how="left")
+    rec.loc[rec.position == "TE", "cls"] = "TE"
+    return rec[rec.cls.notna()]
+
+
+def lift_cells() -> list[dict]:
+    """Empirical lift P(A and B) / (P(A) P(B)) for same-team stat pairs, by rung and receiver class, with a
+    cap = 95% upper bound × (1 + LIFT_MARGIN). Pooled over implied totals (lift is far more stable than the
+    conditional itself). Pairs: receiver rec yds × QB pass yds, receiver TDs × QB pass TDs, receiver rec yds ×
+    QB pass TDs, receiver TDs × team points, QB pass TDs × team points."""
+    tg, sp = load_tables()
+    qb = sp[sp.position == "QB"].sort_values("attempts", ascending=False).drop_duplicates(["game_id", "team"])
+    qb = qb[["game_id", "team", "season", "passing_yards", "passing_tds"]].rename(columns={"passing_yards": "qb_yds", "passing_tds": "qb_tds"})
+    qb = qb.merge(tg[["game_id", "team", "season", "pts"]], on=["game_id", "team", "season"])
+    rec = receiver_classes(sp)[["game_id", "team", "season", "cls", "receiving_yards", "receiving_tds"]].merge(qb, on=["game_id", "team", "season"])
+    cells: list[dict] = []
+
+    def add(pair: str, cls: str, a: float, b: float, A: Any, B: Any) -> None:
+        n, n_a, n_b = len(A), int(A.sum()), int(B.sum())
+        if n < 200 or n_a < 10 or n_b < 10:
+            return
+        joint = int((A & B).sum())
+        expected = n_a * n_b / n
+        lift = joint / expected
+        upper = (joint + 1.64 * math.sqrt(joint + 1.0) + 1.0) / expected
+        cells.append({"pair": pair, "cls": cls, "a": a, "b": b, "n": n, "n_a": n_a, "n_b": n_b, "joint": joint,
+                      "lift": round(lift, 4), "cap": round(max(1.0, upper * (1 + LIFT_MARGIN)), 4)})
+
+    groups = [(c, g) for c, g in rec.groupby("cls")] + [("ALL", rec)]
+    for cls, g in groups:
+        ry, qy, qt, rt, pts = g.receiving_yards, g.qb_yds, g.qb_tds, g.receiving_tds, g.pts
+        for r in LIFT_REC_YDS:
+            for y in LIFT_QB_YDS:
+                add("rec_yds|pass_yds", cls, r, y, ry > r, qy > y)
+            for k in (2, 3, 4, 5):
+                add("rec_yds|pass_td", cls, r, k - 0.5, ry > r, qt >= k)
+        for j in (1, 2, 3):
+            for k in (2, 3, 4, 5):
+                add("td|pass_td", cls, j - 0.5, k - 0.5, rt >= j, qt >= k)
+            for line in LIFT_PTS:
+                add("td|team_total", cls, j - 0.5, line, rt >= j, pts > line)
+    for k in (2, 3, 4, 5):
+        for line in LIFT_PTS:
+            if 6 * k > line + 0.5:
+                continue
+            add("pass_td|team_total", "QB", k - 0.5, line, qb.qb_tds >= k, qb.pts > line)
+    return cells
+
+
+def save_lift_cells(cells: list[dict], path: Path | None = None) -> Path:
+    path = path or (paths.nflverse_dir() / "lift_cells.json")
+    path.write_text(json.dumps({"cells": cells, "generated": datetime.now().isoformat(timespec="seconds")}, indent=0))
+    return path
+
+
+def load_lift_cells() -> list[dict]:
+    """Lift cells from the latest local sync, else the packaged baseline."""
+    for f in (paths.nflverse_dir() / "lift_cells.json", LIFT_BASELINE_FILE):
+        if f.exists():
+            try:
+                return json.loads(f.read_text())["cells"]
+            except (json.JSONDecodeError, KeyError):
+                continue
+    return []
+
+
 def team_pass_shares(season: int | None = None) -> dict[str, float]:
     """Team pass-TD share over the latest season (for the simulator's Beta mean)."""
     _, sp = load_tables()

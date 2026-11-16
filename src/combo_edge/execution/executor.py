@@ -153,7 +153,8 @@ class Executor:
             identity=out.identity, payout=q.payout or 0.0, fair_joint=c.fair.fair_joint,
             fair_lower=c.fair.lower(max(q.payout or 1.0, c.fair.fair_payout), self.s), family_ok=ctx.family_ok,
             family_note=ctx.family_note, quote_age_s=q.age(), combo_ticker=out.combo_ticker, game_id=c.game.id,
-            players=c.players, rfq_stake=ctx.planned_stake,
+            players=c.players, rfq_stake=ctx.planned_stake, model_disagrees=list(getattr(c.fair, "model_disagrees", None) or []),
+            n_makers=out.n_makers, near_lock=getattr(c.fair, "near_lock", None), thin_legs=list(getattr(c.fair, "thin_legs", None) or []),
         )
         g = evaluate(gi, exposure(self.db, self.env, book), self.s)
         if g.stale and not ctx.extra.get("requoted"):

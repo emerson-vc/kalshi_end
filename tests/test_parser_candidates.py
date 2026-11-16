@@ -114,7 +114,8 @@ def test_tail_guards_ev_lower_not_monotone_in_payout(priced):
     assert not all(a < b for a, b in zip(means, means[1:])), means
     for c in cands:
         f = c.fair
-        assert f.fair_joint <= 6 * f.independent + 1e-9
+        if f.method != "history":  # the 6x guard is for simulator / prior tails; history rates (10+ rec → 90+ yds) can exceed it
+            assert f.fair_joint <= 6 * f.independent + 1e-9
         assert f.fair_joint <= min(f.p_a, f.p_b) + 1e-9
 
 

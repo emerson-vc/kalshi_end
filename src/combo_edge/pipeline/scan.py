@@ -12,6 +12,7 @@ import math
 import os
 import random
 import time
+from collections import Counter
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -25,10 +26,10 @@ from combo_edge.pipeline import budget, portfolio
 from combo_edge.pipeline.budget import IdBudgetExhausted
 from combo_edge.pipeline.quotes import QuoteBook, RfqOutcome, RfqRunner, sweep_pending_cancels
 from combo_edge.pipeline.resolve import ComboResolver, feed_demand, rejected_class_set
-from combo_edge.pipeline.selection import select
+from combo_edge.pipeline.selection import apply_candidate_cap, is_core, is_trial, select
 from combo_edge.settings import Settings, env_config
 from combo_edge.sports.nfl import calibration, nflverse
-from combo_edge.sports.nfl.candidates import Candidate, generate, price_all
+from combo_edge.sports.nfl.candidates import FAMILIES, Candidate, generate, price_all
 from combo_edge.sports.nfl.fair import FairModel
 from combo_edge.sports.nfl.parser import coverage
 from combo_edge.sports.nfl.universe import load_week
@@ -164,8 +165,10 @@ async def run_scan(params: ScanParams, *, session: Session | None = None, db: DB
             summary["maker_model"] = {"rows": id_model.metrics.get("rows", 0), "fitted": False, "status": "error",
                                       "error": f"{type(e).__name__}: {e}"}
         rejected = rejected_class_set(db)
-        cands: list[Candidate] = []
+        generated: list[Candidate] = []
         per_game: dict[str, int] = {}
+        game_rows: dict[str, dict] = {}
+        # every game first (no kickoff-order cut), then one ranking across all games
         for g in uni.games:
             if abort():
                 break
@@ -176,24 +179,53 @@ async def run_scan(params: ScanParams, *, session: Session | None = None, db: DB
             gc = generate(g, fm, s, rejected=rejected)
             price_all(gc, fm, s, id_model)
             per_game[g.id] = len(gc)
-            cands.extend(gc)
+            n_core = sum(1 for c in gc if is_core(c))
+            game_rows[g.id] = {"matchup": f"{g.away_code} @ {g.home_code}", "kickoff_ts": g.start_ts, "generated": len(gc),
+                               "core": n_core, "exploration": len(gc) - n_core}
+            log.info("candidates %s @ %s: %d core, %d exploration", g.away_code, g.home_code, n_core, len(gc) - n_core)
+            generated.extend(gc)
             await asyncio.sleep(0)
-        cands = cands[: int(s.get("max_candidates_per_run"))]
+        cands, cut = apply_candidate_cap(generated, int(s.get("max_candidates_per_run")))
+        for c in cands:
+            game_rows[c.game.id]["kept"] = game_rows[c.game.id].get("kept", 0) + 1
         cov = coverage(uni.games, per_game)
         summary["coverage"] = cov
+        summary["candidate_cap"] = {"generated": len(generated), "kept": len(cands), "cut": len(cut), "cap": int(s.get("max_candidates_per_run"))}
         _store_candidates(db, run_id, cands, s)
-        prog.set("candidates", len(cands), "done")
+        _store_candidates(db, run_id, cut, s, slim=True)
+        prog.set("candidates", len(cands), "done", f"{sum(1 for c in cands if is_core(c))} core + "
+                 f"{sum(1 for c in cands if not is_core(c))} exploration across {len(game_rows)} games")
 
-        # 3. select
+        # 3. select: existing combos are re-quoted free; the budget counts new creations only
+        resolver = ComboResolver(session, db, s, uni, run_id=run_id, max_new=params.max_new)
+        summary["prelookup"] = dict(resolver.prelookup(cands))
+        new_budget = min(int(s.get("creation_budget_per_run")), resolver.max_new, budget.creations_left(s, db, env))
         bandit = Bandit(db)
-        chosen = select(cands, s, int(s.get("creation_budget_per_run")), bandit)
+        chosen = select(cands, s, new_budget, bandit)
+        _store_selection(db, cands, chosen)
+        sel_counts: dict[str, int] = {}
         for c in chosen:
-            db.update("candidates", "id", c.db_id, {"selected": 1})
+            k = c.family if is_core(c) else "exploration"
+            sel_counts[k] = sel_counts.get(k, 0) + 1
+        cand_counts: dict[str, int] = {}
+        for c in cands:
+            k = c.family if is_core(c) else "exploration"
+            cand_counts[k] = cand_counts.get(k, 0) + 1
+        summary["families"] = [
+            {"family": f, "kind": "trial" if is_trial(f, s) else "core", "candidates": cand_counts.get(f, 0), "selected": sel_counts.get(f, 0)}
+            for f in list(FAMILIES) + ["exploration"]
+        ]
+        summary["families"][-1]["kind"] = "exploration"
+        summary["near_locked"] = sum(1 for c in cands if c.fair and c.fair.near_lock)
+        summary["fair_sources"] = dict(Counter((c.fair.source or c.fair.method).split(" n=")[0] for c in cands if c.fair))
+        summary["selection"] = {"new_budget": new_budget, "by_family": sel_counts,
+                                "core_existing": sum(1 for c in chosen if c.extra["sel"]["pool"] == "core_existing"),
+                                "core_new": sum(1 for c in chosen if c.extra["sel"]["pool"].startswith("core_new")),
+                                "exploration": sum(1 for c in chosen if c.extra["sel"]["pool"] == "exploration")}
         prog.set("selected", len(chosen), "done")
 
         # 4. resolve
         prog.set("resolved")
-        resolver = ComboResolver(session, db, s, uni, run_id=run_id, max_new=params.max_new)
         resolved: list[Candidate] = []
         for i, c in enumerate(chosen):
             if abort():
@@ -207,6 +239,14 @@ async def run_scan(params: ScanParams, *, session: Session | None = None, db: DB
                 prog.set("resolved", len(resolved))
         prog.set("resolved", len(resolved), "done")
         summary["resolution"] = dict(resolver.counts)
+        for c in cands:
+            if c.combo_ticker:
+                game_rows[c.game.id]["covered"] = game_rows[c.game.id].get("covered", 0) + int(is_core(c))
+        core_total = sum(1 for c in cands if is_core(c))
+        core_covered = sum(1 for c in cands if is_core(c) and c.combo_ticker)
+        summary["core_coverage"] = {"covered": core_covered, "total": core_total,
+                                    "pct": (core_covered / core_total) if core_total else None}
+        summary["per_game"] = sorted(game_rows.values(), key=lambda r: r["kickoff_ts"] or 0)
 
         stake = float(s.get("stake"))
         runner = RfqRunner(session, db, s, book, run_id=run_id, abort=abort)
@@ -234,10 +274,13 @@ async def run_scan(params: ScanParams, *, session: Session | None = None, db: DB
         # 6. ID shortlist
         mode = db.get_state("execution_mode", "paper")
         id_left = budget.id_left(s, db, env)
-        n_short = min(int(s.get("id_shortlist_per_run")), id_left)
+        n_short = shortlist_size(s, id_left)
         shortlist = build_shortlist(resolved, anon, id_model, s, n_short)
-        prog.set("shortlist", len(shortlist), "done", "" if id_left else "ID budget used up for today")
+        _store_shortlist(db, resolved, n_short)
+        prog.set("shortlist", len(shortlist), "done", "" if n_short else
+                 f"ID budget: {id_left} asks left today, {int(s.get('id_reserve') or 0)} kept back for asking by hand")
         summary["id_budget_left_before"] = id_left
+        summary["id_shortlist_size"] = n_short
 
         # 7. ID quotes, deciding while each RFQ is open
         prog.set("id_quotes")
@@ -300,7 +343,8 @@ async def run_scan(params: ScanParams, *, session: Session | None = None, db: DB
             candidates=len(cands), selected=len(chosen), resolved=len(resolved),
             anon_sent=sum(1 for o in anon.values() if o.rfq_id), anon_quoted=sum(1 for o in anon.values() if o.quotes),
             shortlist=len(shortlist), id_sent=len(id_outcomes), id_quoted=sum(1 for _, o in id_outcomes if o.quotes), bought=bought,
-            creations_used_week=budget.creations_this_week(db, env), aborted=abort(),
+            creations_used_week=budget.creations_this_week(db, env), creation_cap=budget.creation_cap(s),
+            created_this_run=resolver.new_this_run, aborted=abort(),
             rfq_outcomes=_outcome_counts(db, run_id),
         )
         status = "aborted" if abort() else "done"
@@ -330,56 +374,143 @@ async def run_scan(params: ScanParams, *, session: Session | None = None, db: DB
 
 
 def _planned_stake(c: Candidate, s: Any, default: float) -> float:
-    from combo_edge.execution.gates import required_ev, size_stake
+    from combo_edge.execution.gates import required_ev_for, size_stake
 
     pay = c.pred_id_payout
-    req = required_ev(pay, s.get("payout_curve"), float(s.get("longshot_payout")), float(s.get("longshot_required_ev")))
+    req = required_ev_for(pay, s)
     lower = c.fair.lower(max(pay, c.fair.fair_payout), s)
     st = size_stake(c.fair.fair_joint, lower, pay, c.pred_ev, req, s)
     return float(min(max(st, float(s.get("min_stake"))), default))
 
 
+def shortlist_size(s: Any, id_left: int) -> int:
+    """ID asks left today minus the hand-asking reserve, capped by id_shortlist_per_run."""
+    return max(0, min(int(s.get("id_shortlist_per_run")), id_left - int(s.get("id_reserve") or 0)))
+
+
+FAILED_SCREEN = ("rejected_combo", "conflict_409", "create_error", "aborted")
+
+
+def shortlist_score(c: Candidate, s: Any, quoted: bool) -> float:
+    """Model edge vs the market, at the fair lower bound: half "fair vs the product of the leg prices",
+    half EV at the predicted ID payout. A quote on the anonymous screen proves makers will quote the combo
+    (small plus); the anonymous price itself only ever raises the predicted ID payout (a floor)."""
+    lower = c.fair.lower(max(c.pred_id_payout, c.fair.fair_payout), s)
+    market_edge = lower * c.leg_product - 1
+    return 0.5 * market_edge + 0.5 * c.pred_ev_lower + (0.05 if quoted else 0.0)
+
+
+def shortlist_tier(c: Candidate, anon_payout: float | None) -> int:
+    """1: near-locked and the anonymous quote or the predicted ID payout beats leg A alone; 2: QB tail stat +
+    own team wins; 3: everything else (ordered by the score)."""
+    nl = (c.fair.near_lock if c.fair else None) or None
+    if nl and nl.get("leg_alone_payout"):
+        best = max(anon_payout or 0.0, c.pred_id_payout or 0.0)
+        if best > nl["leg_alone_payout"]:
+            return 1
+    if c.family == "qb_tail_team_win":
+        return 2
+    return 3
+
+
 def build_shortlist(resolved: list[Candidate], anon: dict[int, RfqOutcome], model: MakerModel, s: Any, n: int, rng: random.Random | None = None) -> list[Candidate]:
-    if n <= 0:
-        return []
     rng = rng or random.Random(int(time.time()) // 3600)
     lo, hi = (float(x) for x in s.get("payout_band"))
-    scored = []
-    straight = []
+    per_game = int(s.get("id_asks_per_game_per_run") or 6)
+    per_player = int(s.get("id_asks_per_player_per_run") or 4)
+    scored: list[Candidate] = []
     for c in resolved:
         o = anon.get(id(c))
-        if o is not None and o.outcome in ("rejected_combo", "conflict_409", "create_error", "aborted"):
+        if o is not None and o.outcome in FAILED_SCREEN:
+            c.extra["short"] = {"rank": None, "reason": f"anonymous RFQ failed ({o.outcome}), so not asked under your ID"}
             continue
         ap = o.best_payout if o else None
-        pay, src = model.predict_id_payout(c, ap, anon_maker_count(o))
+        pay, src = model.predict_id_payout(c, ap, anon_maker_count(o))  # max(model, anonymous): a floor only
         c.pred_id_payout, c.pred_source = pay, src
         lower = c.fair.lower(max(pay, c.fair.fair_payout), s)
         c.pred_ev = c.fair.fair_joint * pay - 1
         c.pred_ev_lower = lower * pay - 1
-        if ap and (c.fair.lower(max(ap, c.fair.fair_payout), s) * ap - 1) > 0:
-            straight.append(c)  # already +EV anonymously
-        else:
-            scored.append(c)
-    straight.sort(key=lambda c: -c.pred_ev_lower)
-    scored.sort(key=lambda c: -c.pred_ev_lower)
+        c.extra["short_score"] = shortlist_score(c, s, bool(o and o.quotes))
+        c.extra["short_tier"] = shortlist_tier(c, ap)
+        scored.append(c)
+    scored.sort(key=lambda c: (c.extra["short_tier"], -c.extra["short_score"]))
+    for i, c in enumerate(scored, 1):
+        c.extra["short"] = {"rank": i, "reason": "below the shortlist cutoff"}
+    if n <= 0:
+        for c in scored:
+            c.extra["short"]["reason"] = "no ID asks available for the scan today (after the hand-asking reserve)"
+        return []
+    out: list[Candidate] = []
+    games: Counter = Counter()
+    players: Counter = Counter()
+
+    def fits(c: Candidate) -> str | None:
+        if games[c.game.id] >= per_game:
+            return f"already {per_game} ID asks on this game this scan (id_asks_per_game_per_run)"
+        for p in c.players:
+            if players[p] >= per_player:
+                return f"already {per_player} ID asks on this player this scan (id_asks_per_player_per_run)"
+        return None
+
+    def take(c: Candidate, how: str) -> None:
+        out.append(c)
+        games[c.game.id] += 1
+        for p in c.players:
+            players[p] += 1
+        c.extra["short"]["reason"] = how
+        if how == "random pick":
+            c.extra["random_pick"] = True
+
     n_random = int(round(n * float(s.get("id_random_share"))))
-    out = straight[:n]
-    need_top = max(0, n - len(out) - n_random)
-    out += scored[:need_top]
+    n_top = n - n_random
+    for c in scored:
+        if len(out) >= n_top:
+            break
+        why = fits(c)
+        if why:
+            c.extra["short"]["reason"] = why
+        else:
+            take(c, "shortlisted")
     picked = {id(c) for c in out}
     mid_band = [c for c in scored if id(c) not in picked and lo <= c.pred_id_payout <= hi]
     rng.shuffle(mid_band)
     for c in mid_band:
         if len(out) >= n:
             break
-        c.extra["random_pick"] = True
-        out.append(c)
+        if not fits(c):
+            take(c, "random pick")
+            picked.add(id(c))
     for c in scored:
         if len(out) >= n:
             break
-        if id(c) not in {id(x) for x in out}:
-            out.append(c)
-    return out[:n]
+        if id(c) not in picked and not fits(c):
+            take(c, "shortlisted")
+            picked.add(id(c))
+    for c in out:
+        c.extra["short"]["cutoff"] = n
+    for c in scored:
+        c.extra["short"].setdefault("cutoff", n)
+    return out
+
+
+def _store_selection(db: DB, cands: list[Candidate], chosen: list[Candidate]) -> None:
+    from combo_edge.storage.db import dumps
+
+    picked = {id(c) for c in chosen}
+    rows = []
+    for c in cands:
+        sel = c.extra.get("sel") or {}
+        rows.append((int(id(c) in picked), sel.get("pool"), sel.get("rank"), sel.get("cutoff"), c.extra.get("prestatus"), dumps(sel), c.db_id))
+    db.executemany("UPDATE candidates SET selected=?, sel_pool=?, sel_rank=?, sel_cutoff=?, prestatus=?, sel_json=? WHERE id=?", rows)
+
+
+def _store_shortlist(db: DB, resolved: list[Candidate], n: int) -> None:
+    from combo_edge.storage.db import dumps
+
+    db.executemany("UPDATE candidates SET short_rank=?, short_cutoff=?, short_reason=?, short_score=? WHERE id=?", [
+        ((c.extra.get("short") or {}).get("rank"), n, (c.extra.get("short") or {}).get("reason"), c.extra.get("short_score"), c.db_id)
+        for c in resolved
+    ])
 
 
 def _store_universe(db: DB, env: str, run_id: int, uni: Any) -> None:
@@ -404,13 +535,24 @@ def _store_universe(db: DB, env: str, run_id: int, uni: Any) -> None:
         db.executemany("INSERT INTO leg_snapshots(run_id,ticker,ts,yes_bid,yes_ask,no_bid,no_ask,spread,bid_size,ask_size,volume,volume_24h,open_interest,last_price,previous_price,move_since_open,game_volume,prob_market,prob_model,prob_fair,extrapolated,two_sided) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", snaps)
 
 
-def _store_candidates(db: DB, run_id: int, cands: list[Candidate], s: Any) -> None:
+def _store_candidates(db: DB, run_id: int, cands: list[Candidate], s: Any, *, slim: bool = False) -> None:
+    """``slim`` (candidates cut by the cap): enough for the trace tool, without explanation or features."""
     from combo_edge.storage.db import dumps
 
     for c in cands:
+        common = {"core": int(is_core(c)), "rank_global": c.extra.get("rank_global"), "cut_reason": c.extra.get("cut_reason")}
+        if slim:
+            c.db_id = db.insert("candidates", {
+                "run_id": run_id, "game_id": c.game.id, "family": c.family, "stratum": c.stratum, "leg_a": c.a.leg.ticker, "leg_b": c.b.leg.ticker,
+                "side_a": c.a.side, "side_b": c.b.side, "p_a": c.a.p, "p_b": c.b.p, "fair_joint": c.fair.fair_joint, "leg_product": c.leg_product,
+                "pred_id_payout": c.pred_id_payout, "pred_ev": c.pred_ev, "pred_ev_lower": c.pred_ev_lower, "selected": 0,
+                "exploration": int(c.exploration), **common,
+            })
+            continue
         f = candidate_features(c)
         c.extra["features"] = f
         c.db_id = db.insert("candidates", {
+            **common,
             "run_id": run_id, "game_id": c.game.id, "legs_key": "|".join(sorted(f"{s['market_ticker']}:{s['side']}" for s in c.selections())),
             "family": c.family, "stratum": c.stratum, "leg_a": c.a.leg.ticker, "leg_b": c.b.leg.ticker, "side_a": c.a.side, "side_b": c.b.side,
             "p_a": c.a.p, "p_b": c.b.p, "fair_joint": c.fair.fair_joint, "fair_lower": c.fair.lower(max(c.pred_id_payout, c.fair.fair_payout), s),

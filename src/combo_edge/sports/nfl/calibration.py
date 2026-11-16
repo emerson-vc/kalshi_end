@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from combo_edge.sports.nfl import simulator as sim
-from combo_edge.sports.nfl.nflverse import load_cells, logit
+from combo_edge.sports.nfl.nflverse import load_cells, load_lift_cells, logit
 
 SHRINK_K = 40.0
 FAMILY_A_B = {
@@ -66,7 +66,11 @@ class Shift:
 
 
 @lru_cache(maxsize=4)
-def compute_shifts(version: str, n_paths: int = 40000) -> tuple[Shift, ...]:
+def compute_shifts(version: str, n_paths: int = 40000, calibrated: bool = True) -> tuple[Shift, ...]:
+    """``calibrated``: measure the simulated conditional the way pricing does — each player leg shifted
+    so the generic game's marginal equals the historical one (sim.calibrated_event); team legs at their
+    own threshold, moved to the historical B marginal in log-odds. ``calibrated=False`` is the old
+    threshold-event method (kept for before/after comparisons)."""
     cells = load_cells()
     out: list[Shift] = []
     by_bucket: dict[float, list[dict]] = {}
@@ -80,8 +84,12 @@ def compute_shifts(version: str, n_paths: int = 40000) -> tuple[Shift, ...]:
             if spec is None:
                 continue
             va, la, vb, lb = spec
-            ia = sim.event(res, va, la(c["a"]))
-            ib = sim.event(res, vb, lb(c["b"]))
+            if calibrated:
+                ia = sim.calibrated_event(res, va, la(c["a"]), c["pA"]) if sim.is_player_var(va) else sim.event(res, va, la(c["a"]))
+                ib = sim.calibrated_event(res, vb, lb(c["b"]), c["pB"]) if sim.is_player_var(vb) else sim.event(res, vb, lb(c["b"]))
+            else:
+                ia = sim.event(res, va, la(c["a"]))
+                ib = sim.event(res, vb, lb(c["b"]))
             if ia is None or ib is None or ia.sum() < 30:
                 continue
             simc, _, _ = sim.conditional(ia, ib, c["pB"])
@@ -92,18 +100,19 @@ def compute_shifts(version: str, n_paths: int = 40000) -> tuple[Shift, ...]:
     return tuple(out)
 
 
-def shifts() -> tuple[Shift, ...]:
-    return compute_shifts(sim_version())
+def shifts(calibrated: bool = True) -> tuple[Shift, ...]:
+    return compute_shifts(sim_version(), calibrated=calibrated)
 
 
-def lookup(family: str, pA: float, pB: float, implied: float, a_key: float | None = None, b_line: float | None = None) -> tuple[float, float, float | None]:
+def lookup(family: str, pA: float, pB: float, implied: float, a_key: float | None = None, b_line: float | None = None,
+           calibrated: bool = True) -> tuple[float, float, float | None]:
     """(δ, effective history n, max nearby historical conditional) for a priced pair.
 
     Cells with the same A threshold are weighted by distance in the B line (2-point scale) and the
     implied total (4-point scale); only without such cells does a generic kernel in
     (logit pA, logit pB, implied) take over. This keeps a near-certain cell (e.g. o24.5 | 4+ TDs)
     from leaking its large log-odds shift into other lines."""
-    rows = [s for s in shifts() if s.family == family]
+    rows = [s for s in shifts(calibrated) if s.family == family]
     if not rows:
         return 0.0, 0.0, None
     same_a = [s for s in rows if a_key is not None and abs(s.a - a_key) < 1e-6] if a_key is not None else []
@@ -134,10 +143,68 @@ def lookup(family: str, pA: float, pB: float, implied: float, a_key: float | Non
     return delta, n_eff, max(near) if near else None
 
 
+# stat pairs with history lift cells: (stat X, stat Y) as stored → yardage scales for the nearest-rung lookup
+LIFT_PAIRS = {
+    ("rec_yds", "pass_yds"): (10.0, 25.0),
+    ("rec_yds", "pass_td"): (10.0, None),
+    ("td", "pass_td"): (None, None),
+    ("td", "team_total"): (None, 1.0),
+    ("pass_td", "team_total"): (None, 1.0),
+}
+RECEIVER_STATS = ("rec_yds", "td")
+
+
+@lru_cache(maxsize=1)
+def _lift_index() -> dict[tuple[str, str], list[dict]]:
+    idx: dict[tuple[str, str], list[dict]] = {}
+    for c in load_lift_cells():
+        idx.setdefault((c["pair"], c["cls"]), []).append(c)
+    return idx
+
+
+def lift_cap(stat_a: str, line_a: float | None, stat_b: str, line_b: float | None, cls: str | None) -> tuple[float | None, dict | None]:
+    """History cap on the lift P(A and B) / (P(A) P(B)) for a same-team YES/YES pair, or (None, None).
+
+    ``cls`` is the receiver's class (WR1 / WR2 / WR3+ / TE; "QB" for QB TDs × team points). Count legs
+    (TDs) must match a history rung exactly when one exists, else the nearest lower rung is used; yardage
+    and points use the nearest rung. Rungs beyond the history use the edge cell, which caps tighter
+    (lift keeps growing further out in the tails)."""
+    if line_a is None or line_b is None:
+        return None, None
+    for (x, y), (sx, sy) in LIFT_PAIRS.items():
+        if (stat_a, stat_b) == (x, y):
+            lx, ly = line_a, line_b
+            break
+        if (stat_b, stat_a) == (x, y):
+            lx, ly = line_b, line_a
+            break
+    else:
+        return None, None
+    pair = f"{x}|{y}"
+    if x == "pass_td":
+        cls = "QB"
+    cells = _lift_index().get((pair, cls or "ALL")) or _lift_index().get((pair, "ALL")) if cls not in ("RB",) else None
+    if not cells:
+        return None, None
+
+    def dist(c: dict) -> float:
+        d = 0.0
+        for v, target, scale in ((c["a"], lx, sx), (c["b"], ly, sy)):
+            if scale is None:  # count rung: exact, else nearest lower (tighter cap), heavily penalised
+                d += 0.0 if abs(v - target) < 1e-6 else (100.0 + abs(v - target) * (1.0 if v < target else 3.0))
+            else:
+                d += abs(v - target) / scale
+        return d
+
+    best = min(cells, key=dist)
+    return float(best["cap"]), best
+
+
 def family_report() -> dict[str, dict]:
     """Per-family calibration status: error before/after the shift, sample sizes."""
     out: dict[str, dict] = {}
-    for fam in ("qb_ptd_team_total", "qb_pyds_rec_yds", "rec_td_team_total", "ml_h1_lead"):
+    for fam in ("near_lock_team_total", "qb_tail_team_win", "same_player_rec_yds", "qb_ptd_team_total", "qb_pyds_rec_yds",
+                "qb_ptd_rec_td", "rb_ryds_win", "qb_pyds_opp_total", "ml_h1_lead", "rec_td_team_total"):
         rows = [s for s in shifts() if s.family == fam]
         if not rows:
             out[fam] = {"status": "no_history", "cells": 0, "n": 0, "note": "no nflverse history for this family; simulator + anchor only"}

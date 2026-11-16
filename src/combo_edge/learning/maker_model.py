@@ -23,7 +23,8 @@ FEATURES = [
     "implied", "abs_margin", "hours_to_kickoff", "dow", "spread_a", "spread_b", "log_vol_a", "log_vol_b",
     "synthetic_legs", "existed", "feed_demand", "anon_log_ratio", "anon_makers", "same_team", "side_a_yes", "side_b_yes",
 ]
-FAMILY_CODES = {"qb_ptd_team_total": 1, "qb_pyds_rec_yds": 2, "rec_td_team_total": 3, "ml_h1_lead": 4}
+FAMILY_CODES = {"qb_ptd_team_total": 1, "qb_pyds_rec_yds": 2, "rec_td_team_total": 3, "ml_h1_lead": 4, "qb_ptd_rec_td": 5,
+                "near_lock_team_total": 6, "qb_tail_team_win": 7, "same_player_rec_yds": 8, "rb_ryds_win": 9, "qb_pyds_opp_total": 10}
 STATS = ["ml", "spread", "game_total", "team_total", "pass_td", "pass_yds", "rec_yds", "rush_yds", "receptions", "td",
          "h1_winner", "h1_spread", "h1_team_total", "h1_total", "rush_rec_yds", "win_margin", "pass_att", "pass_comp", "rush_att"]
 MIN_ROWS = 30

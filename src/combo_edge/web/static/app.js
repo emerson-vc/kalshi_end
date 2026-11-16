@@ -63,14 +63,16 @@
   // Found-table filters, remembered per browser.
   window.ceFilters = function (defaults) {
     let saved = {};
-    try { saved = JSON.parse(localStorage.getItem("ce-filters") || "{}"); } catch (e) {}
+    // v2: the payout filter used to default to the 8x–50x band and hid anything paying more (e.g. a 78x
+    // near-lock); old saved filters are dropped so the wide default applies.
+    try { saved = JSON.parse(localStorage.getItem("ce-filters-v2") || "{}"); } catch (e) {}
     return Object.assign({
       lo: defaults.lo, hi: defaults.hi, family: "", game: "", minEdge: -100, window: "all",
-      save() { try { localStorage.setItem("ce-filters", JSON.stringify({ lo: this.lo, hi: this.hi, family: this.family, game: this.game, minEdge: this.minEdge, window: this.window })); } catch (e) {} },
+      save() { try { localStorage.setItem("ce-filters-v2", JSON.stringify({ lo: this.lo, hi: this.hi, family: this.family, game: this.game, minEdge: this.minEdge, window: this.window })); } catch (e) {} },
       show(el) {
         const d = el.dataset;
         const pay = parseFloat(d.payout || "0");
-        if (pay && (pay < this.lo || pay > this.hi)) return false;
+        if (pay && (pay < this.lo || (this.hi < 1000 && pay > this.hi))) return false;  // top of the slider = no upper limit
         if (this.family && d.family !== this.family) return false;
         if (this.game && d.game !== this.game) return false;
         const edge = parseFloat(d.edge || "-999");

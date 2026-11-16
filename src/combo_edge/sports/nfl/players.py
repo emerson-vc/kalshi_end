@@ -13,6 +13,9 @@ from combo_edge.sports.nfl.nflverse import norm_name
 from combo_edge.sports.nfl.simulator import PlayerSpec, TeamSpec, expected_off_tds, solve_score_logit
 
 
+TOP_N = 3  # receivers per team in the core families (top_receivers by anytime-TD price, top_yardage by rec-yds median)
+
+
 @dataclass
 class Roster:
     home: TeamSpec
@@ -22,6 +25,10 @@ class Roster:
     top_receivers: dict[str, list[str]] = field(default_factory=dict)  # team → [player keys] by anytime-TD price
     top_yardage: dict[str, list[str]] = field(default_factory=dict)    # team → [player keys] by rec-yds median
     names: dict[str, str] = field(default_factory=dict)
+    rec_class: dict[str, str] = field(default_factory=dict)  # player key → WR1 / WR2 / WR3+ / TE (history lift caps)
+    hist_role: dict[str, str] = field(default_factory=dict)  # player key → QB / WR1 / WR2 / TE1 / RB1 (history table roles)
+    rec_median: dict[str, float] = field(default_factory=dict)   # main rec-yds line (ladder median)
+    rush_median: dict[str, float] = field(default_factory=dict)  # main rush-yds line (ladder median)
 
 
 def player_key(l: Leg) -> str:
@@ -63,6 +70,7 @@ def build_roster(g: Game, positions: dict[str, str] | None = None, pass_shares: 
                 tspec.pass_share = min(max(e_ptd / max(exp_off, 0.5), 0.35), 0.85)
             tspec.players.append(PlayerSpec(k, code, "QB", yds_median=yds or 220.0))
             roster.roles[k] = "QB"
+            roster.hist_role[k] = "QB"
             roster.sim_key[k] = k
             roster.names[k] = legs[0].player or k
             for k2, _ in qbs[1:]:
@@ -79,13 +87,20 @@ def build_roster(g: Game, positions: dict[str, str] | None = None, pass_shares: 
             is_rb = pos == "RB" or (pos is None and rush_med is not None and rush_med >= 20 and (rec_med is None or rush_med > rec_med))
             if pos in ("WR", "TE"):
                 is_rb = False
+            if rec_med is not None:
+                roster.rec_median[k] = rec_med
+            if rush_med is not None:
+                roster.rush_median[k] = rush_med
             p_td = _td_prob(legs)
             lam = -math.log(max(1e-6, 1 - p_td)) if p_td is not None else None
             roster.names[k] = legs[0].player or k
             if is_rb:
                 rb.append((k, rush_med, rec_med, lam))
+                roster.rec_class[k] = "RB"
             elif rec_med is not None or lam is not None:
                 wr.append((k, rec_med, lam))
+                if pos == "TE":
+                    roster.rec_class[k] = "TE"
         wr_shares = [(lam or 0.05 * exp_pass) / max(exp_pass, 0.3) for _, _, lam in wr]
         scale = min(1.0, 0.92 / sum(wr_shares)) if wr_shares and sum(wr_shares) > 0.92 else 1.0
         for (k, med, lam), sh in zip(wr, wr_shares):
@@ -98,8 +113,18 @@ def build_roster(g: Game, positions: dict[str, str] | None = None, pass_shares: 
                                             td_share=min(0.9, 0.8 * lam / max(exp_rush, 0.3)), rec_td_share=min(0.3, 0.2 * lam / max(exp_pass, 0.3))))
             roster.roles[k] = "RB"
             roster.sim_key[k] = k
-        roster.top_receivers[code] = [k for k, _, lam in sorted(wr, key=lambda x: -(x[2] or 0))][:2]
-        roster.top_yardage[code] = [k for k, med, _ in sorted(wr, key=lambda x: -(x[1] or 0))][:2]
+        wr_only = [k for k, med, _ in sorted(wr, key=lambda x: -(x[1] or 0)) if roster.rec_class.get(k) != "TE"]
+        for i, k in enumerate(wr_only):
+            roster.rec_class[k] = "WR1" if i == 0 else ("WR2" if i == 1 else "WR3+")
+            if i < 2:
+                roster.hist_role[k] = "WR1" if i == 0 else "WR2"
+        tes = [k for k, med, _ in sorted(wr, key=lambda x: -(x[1] or 0)) if roster.rec_class.get(k) == "TE"]
+        if tes:
+            roster.hist_role[tes[0]] = "TE1"
+        if rb:
+            roster.hist_role[max(rb, key=lambda x: x[1] or 0)[0]] = "RB1"
+        roster.top_receivers[code] = [k for k, _, lam in sorted(wr, key=lambda x: -(x[2] or 0)) if lam][:TOP_N]
+        roster.top_yardage[code] = [k for k, med, _ in sorted(wr, key=lambda x: -(x[1] or 0)) if med][:TOP_N]
         teams[code] = tspec
     roster.home = teams[g.home_code]
     roster.away = teams[g.away_code]

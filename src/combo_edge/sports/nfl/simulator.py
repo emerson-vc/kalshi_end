@@ -173,6 +173,7 @@ def _simulate_players(rng: np.random.Generator, t: TeamSpec, z: np.ndarray, marg
         qb_yds = med + QB_YDS_PER_PTD * (pass_tds - exp_ptd) + QB_YDS_PER_Z * (z / SIGMA_Z) + rng.normal(0, QB_YDS_RESID, n)
         qb_yds = np.maximum(qb_yds, -5.0)
         out[f"pass_td:{qb.key}"] = pass_tds.astype(float)
+        out[f"up:pass_td:{qb.key}"] = (off_tds - pass_tds).astype(float)  # TDs that a higher pass share could turn into pass TDs
         out[f"pass_yds:{qb.key}"] = qb_yds
     team_pass_yds = qb_yds if qb_yds is not None else (225.0 + QB_YDS_PER_Z * (z / SIGMA_Z) + rng.normal(0, 60, n))
     ref_pass = (qbs[0].yds_median if qbs and qbs[0].yds_median else 225.0)
@@ -188,6 +189,7 @@ def _simulate_players(rng: np.random.Generator, t: TeamSpec, z: np.ndarray, marg
         yds = np.clip(yds, 0, None)
         out[f"rec_yds:{p.key}"] = yds
         out[f"td:{p.key}"] = tds.astype(float)
+        out[f"up:td:{p.key}"] = (pass_tds - tds).astype(float)  # team pass TDs a higher target share could make his
         out[f"receptions:{p.key}"] = np.round(yds * p.receptions_per_yd * np.exp(rng.normal(0, 0.22, n)))
     for p in [p for p in t.players if p.role == "RB"]:
         med = p.yds_median or 45.0
@@ -199,6 +201,7 @@ def _simulate_players(rng: np.random.Generator, t: TeamSpec, z: np.ndarray, marg
         out[f"rec_yds:{p.key}"] = rec_yds
         out[f"rush_rec_yds:{p.key}"] = ry + rec_yds
         out[f"td:{p.key}"] = (rtd + rec_td).astype(float)
+        out[f"up:td:{p.key}"] = (off_tds - rtd - rec_td).astype(float)
         out[f"receptions:{p.key}"] = np.round(rec_yds * p.receptions_per_yd * np.exp(rng.normal(0, 0.25, n)))
     for qb in qbs[:1]:
         ry = 12.0 * np.exp(rng.normal(0, 0.8, n))
@@ -221,6 +224,66 @@ def indicator(sim: SimResult, var: str, p: float, rng: np.random.Generator, side
     return ind if side_yes else ~ind
 
 
+PLAYER_PREFIXES = ("pass_td:", "pass_yds:", "rec_yds:", "td:", "rush_yds:", "receptions:", "rush_rec_yds:")
+LEG_CALIBRATION = "market-matched quantile, propensity-weighted ties"  # part of sim_version(): busts calibration caches
+
+
+def is_player_var(var: str | None) -> bool:
+    return bool(var) and var.startswith(PLAYER_PREFIXES)  # type: ignore[union-attr]
+
+
+def calibrated_event(sim: SimResult, var: str, line: float, p_yes: float, side_yes: bool = True) -> np.ndarray | None:
+    """Weights in [0, 1] for the leg's YES event after shifting that player's distribution until the
+    simulator's P(YES) equals ``p_yes`` (the market-based probability the pair is priced with).
+
+    Any monotone shift of one player's stat (a higher mean, target share or pass share) turns "stat > line"
+    into "stat > t" on the simulated values, so the event becomes the top-``p_yes`` share of paths.
+    Paths tied at the boundary value t get a fraction: for TD counts raised above the simulator, in
+    proportion to how many more TDs a higher share could make his (``up:`` arrays, e.g. the team's other
+    pass TDs), otherwise evenly. The conditional is then measured on the player's calibrated tail rather
+    than on the model's own extreme tail."""
+    x = sim.get(var)
+    if x is None:
+        return None
+    n = x.size
+    p = min(max(float(p_yes), 1e-4), 1 - 1e-4)
+    m = p * n                                   # paths (weighted) the YES event must cover
+    xs = np.sort(x)[::-1]
+    v = xs[min(int(math.floor(m)), n - 1)]      # boundary value
+    above = x > v
+    w = above.astype(float)
+    ties = x == v
+    need = m - float(above.sum())
+    if need > 0 and ties.any():
+        prop = sim.get(f"up:{var}")
+        if prop is not None and v <= line:      # raising the player's tail: use the propensity to gain one more
+            pr = np.clip(prop[ties], 0, None)
+            pos = pr > 0
+            if need <= pos.sum():
+                w[ties] = _scaled_weights(pr, need)
+            else:  # every path that can gain one gets it; the rest of the mass is spread evenly
+                tw = np.where(pos, 1.0, (need - pos.sum()) / max((~pos).sum(), 1))
+                w[ties] = np.minimum(tw, 1.0)
+        else:
+            w[ties] = min(1.0, need / ties.sum())
+    return w if side_yes else 1.0 - w
+
+
+def _scaled_weights(prop: np.ndarray, total: float) -> np.ndarray:
+    """min(1, c·prop) with c chosen so the weights sum to ``total`` (bisection; total ≤ count of prop > 0)."""
+    total = min(total, float((prop > 0).sum()))
+    lo, hi = 0.0, 1.0
+    while np.minimum(1.0, hi * prop).sum() < total and hi < 1e9:
+        hi *= 2
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        if np.minimum(1.0, mid * prop).sum() < total:
+            lo = mid
+        else:
+            hi = mid
+    return np.minimum(1.0, hi * prop)
+
+
 def event(sim: SimResult, var: str, line: float, side_yes: bool = True) -> np.ndarray | None:
     """Boolean array for the leg's own threshold event (var > line), or its complement."""
     x = sim.get(var)
@@ -235,9 +298,11 @@ def conditional(ia: np.ndarray, ib: np.ndarray, pB_target: float | None = None) 
 
     The adjustment moves the conditional in log-odds by the gap between the target and simulated
     marginal of B, so independent legs keep P(B|A) = P(B)."""
-    n_a = int(ia.sum())
+    ia = ia.astype(float)
+    ib = ib.astype(float)
+    n_a = float(ia.sum())
     pb_sim = float(ib.mean())
-    raw = float((ia & ib).sum() / n_a) if n_a else pb_sim
+    raw = float((ia * ib).sum() / n_a) if n_a > 0 else pb_sim
     if pB_target is None:
         return raw, raw, pb_sim
     lg = lambda p: math.log(min(max(p, 1e-4), 1 - 1e-4) / (1 - min(max(p, 1e-4), 1 - 1e-4)))

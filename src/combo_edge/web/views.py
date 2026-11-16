@@ -11,7 +11,7 @@ from typing import Any
 
 from combo_edge import money
 from combo_edge.learning.requote import clv_for
-from combo_edge.sports.nfl.fair import FAMILY_LABELS, maker_sentence
+from combo_edge.sports.nfl.fair import FAMILY_LABELS, TRIAL_FAMILIES, maker_sentence
 from combo_edge.storage.db import DB
 from combo_edge.timeutil import fmt_kickoff
 
@@ -30,6 +30,22 @@ def latest_run(db: DB, env: str, *, finished: bool = False) -> dict | None:
         r["summary"] = _j(r.get("summary_json"))
         r["progress"] = _j(r.get("progress_json"))
     return r
+
+
+def trace_games(db: DB, env: str) -> list[dict]:
+    """Games of the latest run with candidates, for the trace dropdowns."""
+    rid = db.scalar("SELECT MAX(c.run_id) FROM candidates c JOIN runs r ON r.id=c.run_id WHERE r.env=?", (env,))
+    if rid is None:
+        return []
+    rows = db.query("SELECT DISTINCT g.id, g.away_code, g.home_code, g.start_ts FROM games g JOIN candidates c ON c.game_id=g.id "
+                    "WHERE c.run_id=? ORDER BY g.start_ts", (rid,))
+    return [{"id": r["id"], "label": f"{r['away_code']} @ {r['home_code']}"} for r in rows]
+
+
+def trace_legs(db: DB, env: str, game_id: str) -> list[dict]:
+    if not game_id:
+        return []
+    return db.query("SELECT ticker, wording FROM legs WHERE env=? AND game_id=? ORDER BY stat, player, line", (env, game_id))
 
 
 def found_rows(db: DB, env: str, run_id: int | None) -> list[dict]:
@@ -165,6 +181,7 @@ def pnl(db: DB, env: str, book: str) -> dict:
     for r in rows:
         wk = datetime.fromtimestamp(r["ts"]).strftime("%G-W%V")
         fam = FAMILY_LABELS.get(r["family"] or "", "Exploration")
+        fam = f"{'Trial' if r['family'] in TRIAL_FAMILIES else ('Exploration' if not r['family'] else 'Core')} · {fam.replace('Trial: ', '')}"
         clv = clv_for(db, r["combo_ticker"], "id", r["payout"]) if r["payout"] else None
         for grp in (by_week[wk], by_type[fam]):
             if clv is not None:

@@ -18,6 +18,12 @@ ANCHOR_CAP = {
     "qb_ptd_team_total": 0.92,
     "rec_td_team_total": 0.92,
     "qb_pyds_rec_yds": 0.92,
+    "qb_ptd_rec_td": 0.92,
+    "near_lock_team_total": 0.995,
+    "same_player_rec_yds": 0.995,
+    "qb_tail_team_win": 0.92,
+    "rb_ryds_win": 0.92,
+    "qb_pyds_opp_total": 0.92,
     "ml_h1_lead": 0.88,
     None: 0.90,
 }
@@ -26,6 +32,7 @@ ANCHOR_CAP = {
 RHO = {
     "same_player_tail_own_team": 0.55,
     "qb_yds_own_receiver": 0.60,
+    "qb_td_own_receiver": 0.50,
     "ml_h1_lead": 0.65,
     "same_player": 0.45,
     "same_team": 0.25,
@@ -81,6 +88,8 @@ def relation(a_team: str | None, b_team: str | None, a_player: str | None, b_pla
         return "ml_h1_lead"
     if (a_stat == "pass_yds" and b_stat in ("rec_yds",)) or (b_stat == "pass_yds" and a_stat in ("rec_yds",)):
         return "qb_yds_own_receiver" if a_team == b_team else "opponent"
+    if {a_stat, b_stat} in ({"pass_td", "td"}, {"pass_td", "rec_yds"}) and a_player != b_player:
+        return "qb_td_own_receiver" if a_team == b_team else "opponent"
     if a_stat in ("game_total", "h1_total") or b_stat in ("game_total", "h1_total"):
         return "game_level"
     if a_team and b_team and a_team != b_team:

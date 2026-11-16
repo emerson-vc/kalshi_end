@@ -79,10 +79,9 @@ def test_fair_model_prices_family_pair(was_nyg, settings):
     qb4 = next(l for l in was_nyg.legs if l.stat == "pass_td" and l.player == "Jayden Daniels" and l.k == 4 and not l.protected)
     tt = next(l for l in was_nyg.legs if l.stat == "team_total" and l.team == "WAS" and l.line == 28.5)
     r = fm.price(ComboLeg(qb4, "yes"), ComboLeg(tt, "yes"), "qb_ptd_team_total")
-    assert r.method == "simulator"
-    # history at implied ~20: 0.86 ± 0.06 (n=38); WAS throws less than average, so allow a wider band
-    assert 0.70 <= r.cond <= 0.95
-    assert r.fair_joint <= 6 * r.independent + 1e-12
+    assert r.method == "history" and r.source.startswith("history n=")  # nflverse table: QB 4+ → team > 28.5
+    # history: P(team > 28.5 | QB 4+) ≈ 0.98 league-wide, moved to WAS's market price for o28.5
+    assert 0.70 <= r.cond <= 0.995
     assert r.fair_joint <= min(r.p_a, r.p_b)
     assert "WAS Commanders over 28.5 points" in r.explanation["sentence"]
     # NO side is the complement

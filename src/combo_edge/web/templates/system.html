@@ -35,10 +35,10 @@
       {% for it in items %}{% set m = it.meta %}
         <label class="block text-sm">
           <div class="flex justify-between"><b>{{ m.label }}</b>{% if it.overridden %}<button type="button" class="text-xs underline muted" hx-post="/api/settings/reset/{{ m.key }}" hx-target="#settings-msg">reset</button>{% endif %}</div>
-          <div class="text-xs muted mb-1">{{ m.help }} <span class="opacity-70">Default: {{ it.default|tojson if m.kind in ('curve', 'band', 'families') else it.default }}</span></div>
+          <div class="text-xs muted mb-1">{{ m.help }} <span class="opacity-70">Default: {{ it.default|tojson if m.kind in ('curve', 'band', 'range', 'families') else it.default }}</span></div>
           {% if m.kind == 'bool' %}<input type="hidden" name="_present_{{ m.key }}" value="1"><input type="checkbox" name="{{ m.key }}" value="true" {{ 'checked' if it.value }}>
-          {% elif m.kind in ('curve', 'band', 'families') %}<textarea name="{{ m.key }}" class="input font-mono text-xs" rows="{{ 3 if m.kind != 'band' else 1 }}">{{ it.value|tojson }}</textarea>
-          {% else %}<input name="{{ m.key }}" class="input num" value="{{ it.value }}">{% endif %}
+          {% elif m.kind in ('curve', 'band', 'range', 'families') %}<textarea name="{{ m.key }}" class="input font-mono text-xs" rows="{{ 1 if m.kind in ('band', 'range') else 3 }}">{{ it.value|tojson }}</textarea>
+          {% else %}<input name="{{ m.key }}" class="input num" value="{{ '' if it.value is none else it.value }}"{% if m.kind == 'optfloat' %} placeholder="off"{% endif %}>{% endif %}
         </label>
       {% endfor %}</div>
     </fieldset>{% endfor %}

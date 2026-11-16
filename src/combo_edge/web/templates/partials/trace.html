@@ -1,0 +1,11 @@
+{% if t %}
+<div class="space-y-2 text-sm">
+  <div><b>{{ t.legs[0] }}</b> + <b>{{ t.legs[1] }}</b> <span class="muted text-xs">· run {{ t.run_id }}</span></div>
+  <ol class="space-y-1">
+    {% for st in t.steps %}
+    <li class="flex gap-2"><span class="chip {{ 'chip-ok' if st.ok else ('chip-bad' if st.ok == false else '') }} shrink-0 w-28 justify-center">{{ st.stage }}</span><span class="{{ 'bad' if st.ok == false }}">{{ st.detail }}</span></li>
+    {% endfor %}
+  </ol>
+  <div class="font-semibold">Verdict: {{ t.verdict }}</div>
+</div>
+{% elif error %}<span class="inline-msg bad">{{ error }}</span>{% endif %}

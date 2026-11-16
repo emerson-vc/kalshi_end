@@ -1,6 +1,7 @@
 """Combo resolution: local index first, then the feed index, then POST — within the per-run and
-weekly creation caps. Every POST is counted (Kalshi presumably returns the existing combo for a
-repeat, but that is undocumented, so it counts against the 5,000/week cap either way)."""
+weekly creation caps. Only POSTs count as creations; combos found in the local or feed index are
+free to re-quote. Every POST is counted (Kalshi presumably returns the existing combo for a repeat,
+but that is undocumented, so it counts against the 5,000/week cap either way)."""
 
 from __future__ import annotations
 
@@ -45,6 +46,33 @@ class ComboResolver:
             bad = int(same_game and ("SHARD1" in name or "MULTIGAME" in name))
             return (bad, feed_rank, pref, name)
         return sorted(options, key=rank)[0]
+
+    def prelookup(self, cands: list[Candidate]) -> Counter:
+        """Before selection: find which candidates already have a combo (ours, imported, or seen in the
+        public feed) so selection can re-quote them without spending the new-creation budget. One query
+        for the whole index; sets c.collection, c.combo_ticker and c.extra["prestatus"]."""
+        idx: dict[str, tuple[str, str]] = {}
+        rank = {"ours": 0, "import": 1}
+        for r in self.db.query("SELECT legs_key, ticker, source FROM combos WHERE env=?", (self.env,)):
+            cur = idx.get(r["legs_key"])
+            if cur is None or rank.get(r["source"], 2) < rank.get(cur[1], 2):
+                idx[r["legs_key"]] = (r["ticker"], r["source"])
+        counts: Counter = Counter()
+        for c in cands:
+            coll = self.choose_collection(c)
+            if coll is None:
+                c.extra["prestatus"] = "no_collection"
+                counts["no_collection"] += 1
+                continue
+            c.collection = coll
+            hit = idx.get(c.key(coll))
+            if hit:
+                c.combo_ticker = hit[0]
+                c.extra["prestatus"] = "found_local" if hit[1] in ("ours", "import") else "found_feed"
+            else:
+                c.extra["prestatus"] = "new"
+            counts[c.extra["prestatus"]] += 1
+        return counts
 
     def lookup(self, key: str) -> tuple[str | None, str | None]:
         row = self.db.one("SELECT ticker, source FROM combos WHERE env=? AND legs_key=? ORDER BY CASE source WHEN 'ours' THEN 0 WHEN 'import' THEN 1 ELSE 2 END LIMIT 1", (self.env, key))

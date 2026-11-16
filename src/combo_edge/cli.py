@@ -92,6 +92,28 @@ def cmd_scan(a: argparse.Namespace) -> int:
     return 1 if summary.get("error") else 0
 
 
+def cmd_trace(a: argparse.Namespace) -> int:
+    from combo_edge.pipeline.trace import parse_leg, trace_combo
+
+    try:
+        la, lb = parse_leg(a.leg_a), parse_leg(a.leg_b)
+    except ValueError as e:
+        print(f"error: {e}")
+        return 2
+    db, s = get_db(), _settings()
+
+    async def go(sess: Any) -> dict:
+        return await trace_combo(db, la, lb, run_id=a.run, session=sess, settings=s, env=env_config().name)
+
+    out = asyncio.run(_with_session(go))
+    print(f"Run {out['run_id']}: {out['legs'][0]}  +  {out['legs'][1]}")
+    for st in out["steps"]:
+        mark = {True: "ok ", False: "NO ", None: " - "}[st["ok"]]
+        print(f"  [{mark}] {st['stage']:<20} {st['detail']}")
+    print(f"Verdict: {out['verdict']}")
+    return 0
+
+
 def cmd_limits(_: argparse.Namespace) -> int:
     from combo_edge.pipeline import budget
 
@@ -198,6 +220,12 @@ def cmd_nflverse(_: argparse.Namespace) -> int:
     _print(nflverse.sync())
     cells = nflverse.history_cells()
     print(f"saved {len(cells)} history cells to {nflverse.save_cells(cells)}")
+    lifts = nflverse.lift_cells()
+    print(f"saved {len(lifts)} lift cells to {nflverse.save_lift_cells(lifts)}")
+    from combo_edge.sports.nfl import history
+
+    table = history.build(history.production_seasons())
+    print(f"saved the history table ({len(table['pairs'])} pairs, seasons {table['meta']['seasons']}) to {history.save(table)}")
     return 0
 
 
@@ -266,6 +294,11 @@ def main(argv: list[str] | None = None) -> int:
     sc.add_argument("--stake", type=float)
     sc.add_argument("--id-shortlist", type=int)
     sc.set_defaults(fn=cmd_scan)
+    tr = sub.add_parser("trace", help="why did a scan miss this combo? (TICKER or TICKER:no for each leg)")
+    tr.add_argument("leg_a")
+    tr.add_argument("leg_b")
+    tr.add_argument("--run", type=int, help="run id (default: the latest run)")
+    tr.set_defaults(fn=cmd_trace)
     sub.add_parser("doctor", help="check keys, websocket, collections, calibration").set_defaults(fn=cmd_doctor)
     sub.add_parser("limits", help="show API limits and local budgets").set_defaults(fn=cmd_limits)
     sub.add_parser("upgrade-tier", help="request the Advanced API tier").set_defaults(fn=cmd_upgrade)

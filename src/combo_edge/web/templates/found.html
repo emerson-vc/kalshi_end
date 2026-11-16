@@ -8,14 +8,14 @@
     </button>
     <label class="text-xs muted">Stake ($)
       <input class="input num w-20" type="number" name="stake" step="1" min="1" value="{{ s.get('stake')|int }}" title="Target cost for the anonymous screen RFQs"></label>
-    <label class="text-xs muted">Combos to look up
-      <input class="input num w-24" type="number" name="budget_n" min="1" value="{{ s.get('creation_budget_per_run') }}" title="Most combos looked up or created this scan"></label>
+    <label class="text-xs muted">New combos
+      <input class="input num w-24" type="number" name="budget_n" min="0" value="{{ s.get('creation_budget_per_run') }}" title="Most NEW combos created this scan; existing combos are re-quoted without using it"></label>
     <label class="text-xs muted">ID shortlist
-      <input class="input num w-20" type="number" name="id_shortlist" min="0" value="{{ s.get('id_shortlist_per_run') }}" title="Combos re-quoted under your ID"></label>
+      <input class="input num w-20" type="number" name="id_shortlist" min="0" value="{{ s.get('id_shortlist_per_run') }}" title="Most combos asked under your ID (the scan uses the ID asks left today minus the reserve, up to this)"></label>
     <label class="text-sm flex items-center gap-2 pb-2"><input type="checkbox" name="dry_run" value="1"> Dry run <span class="muted text-xs">(never buys)</span></label>
     <div class="text-xs muted pb-2 leading-relaxed">
-      Sends up to <b>{{ s.get('creation_budget_per_run') }}</b> anonymous RFQs + up to <b>{{ [s.get('id_shortlist_per_run'), id_left]|min }}</b> ID RFQs
-      ({{ id_left }} ID asks left today). {% if h.mode == 'real' %}<b class="bad">Buys automatically if a quote passes the gates.</b>{% elif h.mode == 'paper' %}Paper mode: records what it would buy.{% else %}Execution off: never buys.{% endif %}<br>
+      Re-quotes every existing core combo, creates up to <b>{{ s.get('creation_budget_per_run') }}</b> new ones, then up to <b>{{ id_short }}</b> ID RFQs
+      ({{ id_left }} ID asks left today, {{ s.get('id_reserve') }} kept back for you). {% if h.mode == 'real' %}<b class="bad">Buys automatically if a quote passes the gates.</b>{% elif h.mode == 'paper' %}Paper mode: records what it would buy.{% else %}Execution off: never buys.{% endif %}<br>
       Next automatic scan: {% if next_scan %}<b>{{ fmt_kickoff(next_scan) }}</b>{% else %}not scheduled (install the daily scan on System){% endif %}
     </div>
     <span id="scan-msg" class="pb-2"></span>
@@ -31,7 +31,7 @@
       <div class="flex items-center gap-2 mt-1">
         <input type="range" min="2" max="100" step="1" x-model.number="lo" class="w-24"><span class="num font-semibold text-[var(--text)]" x-text="lo + 'x'"></span>
         <span>to</span>
-        <input type="range" min="5" max="200" step="1" x-model.number="hi" class="w-24"><span class="num font-semibold text-[var(--text)]" x-text="hi + 'x'"></span>
+        <input type="range" min="5" max="1000" step="5" x-model.number="hi" class="w-24"><span class="num font-semibold text-[var(--text)]" x-text="hi >= 1000 ? 'any' : hi + 'x'"></span>
       </div></label>
     <label class="muted">Family<select x-model="family" class="input mt-1"><option value="">All</option>{% for f in families %}<option>{{ f }}</option>{% endfor %}</select></label>
     <label class="muted">Game<select x-model="game" class="input mt-1"><option value="">All</option>{% for g in games %}<option>{{ g }}</option>{% endfor %}</select></label>
@@ -41,5 +41,30 @@
   <div id="results" hx-get="/p/results" hx-trigger="sse-results from:body" hx-swap="innerHTML">
     {% include "partials/results.html" %}
   </div>
+</section>
+
+<section class="panel p-4 space-y-3" x-data="{ open: false }">
+  <button type="button" class="font-bold flex items-center gap-2" @click="open = !open"><span x-text="open ? '▾' : '▸'"></span> Why did it miss this?</button>
+  <form x-show="open" x-cloak class="space-y-3 text-sm" hx-post="/api/trace" hx-target="#trace-out" hx-indicator="#trace-spin">
+    <div class="muted text-xs">Pick two legs (or paste tickers) to see where that combo stopped in the latest scan.</div>
+    <div class="grid md:grid-cols-2 gap-4">
+      {% for slot in ['a', 'b'] %}
+      <div class="space-y-1">
+        <div class="text-xs uppercase muted font-semibold">Leg {{ slot|upper }}</div>
+        <select class="input" name="game_{{ slot }}" hx-get="/p/trace/legs" hx-target="#legs-{{ slot }}" hx-include="this" hx-vals='{"slot": "{{ slot }}"}'>
+          <option value="">Game…</option>{% for g in trace_games %}<option value="{{ g.id }}">{{ g.label }}</option>{% endfor %}
+        </select>
+        <select class="input" name="leg_{{ slot }}" id="legs-{{ slot }}"><option value="">Leg…</option></select>
+        <input class="input font-mono text-xs" name="ticker_{{ slot }}" placeholder="or ticker, e.g. KXNFLPASSTDS-…-4 (add :no for No)">
+        <label class="text-xs"><input type="checkbox" name="no_{{ slot }}" value="1"> No side</label>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="btn btn-primary btn-sm"><span id="trace-spin" class="spinner"></span> Trace</button>
+      <label class="text-xs muted">Run <input class="input num w-24 inline" name="run" placeholder="latest"></label>
+    </div>
+  </form>
+  <div id="trace-out" x-show="open"></div>
 </section>
 {% endblock %}

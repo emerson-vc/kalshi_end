@@ -48,6 +48,7 @@ class Leg:
     p_fair: float | None = None
     extrapolated: bool = False
     disagreement: bool = False
+    thin: bool = False  # wide spread, no ask, or spread > 40% of the mid: probability blended with history
 
     @property
     def k(self) -> int | None:

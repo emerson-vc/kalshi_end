@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS candidates (
   combo_ticker TEXT, status TEXT, explanation_json TEXT, features_json TEXT);
 CREATE INDEX IF NOT EXISTS cand_run ON candidates(run_id);
 CREATE INDEX IF NOT EXISTS cand_combo ON candidates(combo_ticker);
+CREATE INDEX IF NOT EXISTS cand_legs ON candidates(leg_a, leg_b);
 
 CREATE TABLE IF NOT EXISTS rfqs (
   id TEXT PRIMARY KEY, env TEXT, run_id INTEGER, candidate_id INTEGER, combo_ticker TEXT,
@@ -172,7 +173,14 @@ class DB:
         self._migrate()
 
     # columns added after the first release; CREATE TABLE IF NOT EXISTS won't add them to an existing DB
-    _ADDED_COLUMNS = (("rfqs", "features_json", "TEXT"),)
+    _ADDED_COLUMNS = (
+        ("rfqs", "features_json", "TEXT"),
+        # per-candidate trace info ("why did it miss this?")
+        ("candidates", "core", "INTEGER"), ("candidates", "rank_global", "INTEGER"), ("candidates", "cut_reason", "TEXT"),
+        ("candidates", "prestatus", "TEXT"), ("candidates", "sel_pool", "TEXT"), ("candidates", "sel_rank", "INTEGER"),
+        ("candidates", "sel_cutoff", "INTEGER"), ("candidates", "sel_json", "TEXT"), ("candidates", "short_rank", "INTEGER"),
+        ("candidates", "short_cutoff", "INTEGER"), ("candidates", "short_reason", "TEXT"), ("candidates", "short_score", "REAL"),
+    )
 
     def _migrate(self) -> None:
         for table, col, typ in self._ADDED_COLUMNS:

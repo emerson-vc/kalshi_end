@@ -40,20 +40,42 @@ Secrets never leave `.env`; nothing prints them.
 
 ## What a scan does
 
-legs → candidates (4 proven families + 15% exploration) → selected (≤500, family shares) →
-looked up / created (local index → feed index → POST; 5,000/week cap minus 300 for your phone) →
-**anonymous screen** (cheap, never bought) → **ID shortlist** (≤30, 20% random mid-band) →
-**ID RFQs**, decided while each RFQ is still open → bought (Real) / booked (Paper).
+legs → candidates for **every game** (5 exhaustive core families + exploration), ranked together by EV at the
+lower bound; the 6,000 cap never cuts core pairs and every game keeps a fair share → selected: **every existing
+core combo is re-quoted free**, plus up to 500 **new** ones (85% core by family share, spread across games,
+furthest kickoff first; exactly 15% exploration) → looked up / created (local index → feed index → POST; only
+POSTs count; 5,000/week cap minus 300 for your phone) → **anonymous screen** (cheap, never bought; only proof
+of quoting and a floor on the ID price) → **ID shortlist** (ID asks left today − 10 kept back, ≤60; ranked by
+model edge vs the leg prices; 10% random; ≤6 per game, ≤4 per player) → **ID RFQs**, decided while each RFQ
+is still open → bought (Real) / booked (Paper).
 
-Guards: the ID budget (100/day Real, 40/day Paper, from every source), take-rate tracking, a weekly fade monitor, the payout band (8x–50x), conditional caps, a joint cap of 6× independence, and a lower bound that widens with payout.
+Fair value: leg probabilities are the de-vigged mid; thin legs (spread > 5¢ or > 40% of the mid, or no ask)
+are blended 50/50 with the player's history rate and flagged. P(B | A) comes from an nflverse history table
+(2021–current, by role QB / WR1 / WR2 / TE1 / RB1 and rung; team win is spread-aware) whenever the leg has
+40+ history games; the simulator only fills thin spots, capped at history + 5%. **Near-locked** pairs (one leg
+hits ≥ 93% of the time the other does, e.g. QB 4+ TDs → team over 24.5) are priced at ≈ leg A alone; the card
+shows "B hits X% when A hits" and "combo pays Nx vs leg A alone Mx".
 
-Gates (all on an ID quote): payout-scaled required EV (3x +8% … 50x +35%; above 50x +100%), EV > 0 at the lower bound, the family passes its history check, quote ≤ 3 s old, and caps ($5/combo, $30/day, 3/game, 2/player, never the same combo twice).
+Core families (yes/yes, both teams): near-lock player TDs × own team total; QB 3+/4+ TDs or 275+/300+/325+ yards
+× own team wins; same-player receptions × rec yards; QB pass TDs × own team total (the rest); QB pass yards ×
+top-2 receivers' yards. Trial families (10% of new creations each, P&L shown separately): QB TDs × WR1/TE1 2+
+TDs, RB1 100+ rush yards × win, QB 300+ × opponent total over, team win × 1H lead.
+
+Guards: "too good to be true" (EV > +80% with 8+ makers is never auto-bought unless it's a well-documented
+near-lock), model vs market > 2x, the ID budget (100/day Real, 40/day Paper, from every source), take-rate tracking, a weekly fade monitor, conditional caps, a joint cap of 6× independence, and a lower bound that widens with payout. The payout band (8x–50x) is only a display filter.
+
+Gates (all on an ID quote): payout-scaled required EV, smooth in log-payout (3x +8%, 20x +18%, 50x +35%, 75x +45%, 100x +55%, 150x +70%, 200x +85%; above 200x +100%), EV > 0 at the lower bound, the family passes its history check, quote ≤ 3 s old, and caps ($5/combo, $30/day, 3/game, 2/player, never the same combo twice).
+
+**Why did it miss this?** Found → "Why did it miss this?" (or `combo-edge trace LEG_A LEG_B [--run N]`, `TICKER:no`
+for a No side) shows where a combo stopped: not generated (which rule), cut by the cap, not selected (rank vs
+cutoff), creation problems, the anonymous quote, the ID shortlist (rank vs cutoff), the ID quote and the gate.
 
 ## CLI
 
 ```
 combo-edge                        dashboard (--lan, --port, --no-browser)
 combo-edge scan [--dry-run] [--budget N] [--max-new N] [--stake $] [--id-shortlist N]
+combo-edge trace LEG_A LEG_B [--run N]   where a combo stopped in a scan
 combo-edge doctor | limits | upgrade-tier | fit | nflverse-sync
 combo-edge kill | resume          kill switch (also: touch data/KILL)
 combo-edge recorder | requote-due | fade-check | dailyscan-tick

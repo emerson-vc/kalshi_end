@@ -12,56 +12,96 @@ bankroll_and_caps:
   edge_for_max_stake: 0.50      # EV above the gate (at the lower bound) that earns the full $5
 
 gates:
-  # Required EV after fees by payout; interpolated smoothly in log-payout.
+  # Required EV after fees by payout; interpolated smoothly in log-payout (no jumps between points).
   payout_curve:
     - [3, 0.08]
     - [10, 0.12]
     - [20, 0.18]
     - [35, 0.25]
     - [50, 0.35]
-  longshot_payout: 50.0         # above this payout ...
-  longshot_required_ev: 1.00    # ... auto-buy only at +100% EV or better
+    - [75, 0.45]
+    - [100, 0.55]
+    - [150, 0.70]
+    - [200, 0.85]
+  beyond_curve_required_ev: 1.00  # above the curve's last point (200x): auto-buy only at +100% EV or better
   max_quote_age_s: 3.0
+  too_good_ev: 0.80             # EV above this with too_good_min_makers+ makers: never auto-bought ("check by hand") ...
+  too_good_min_makers: 8
+  too_good_exempt_min_n: 100    # ... unless near-locked, both legs not thin, and history n >= this
   require_history_calibration: false   # families with no nflverse history pass on the simulator alone
 
 budget:
   stake: 5.0                    # target cost for screen RFQs
-  creation_budget_per_run: 500
-  max_new_combos_per_run: 500
+  creation_budget_per_run: 500  # NEW combos (POSTs) per scan; existing combos are re-quoted without using it
+  max_new_combos_per_run: 500   # hard stop on POSTs per scan (the resolver enforces it)
   weekly_creation_cap: 5000
   weekly_creation_reserve: 300  # left for the Kalshi app
-  id_shortlist_per_run: 30
-  id_random_share: 0.20
+  id_shortlist_per_run: 60       # upper limit; the run uses (ID asks left today - id_reserve) if smaller
+  id_reserve: 10                 # ID asks kept back each day for asking by hand
+  id_random_share: 0.10
+  id_asks_per_game_per_run: 6    # 2x the 3-bets-per-game cap: never ask more than could be bought
+  id_asks_per_player_per_run: 4  # 2x the 2-bets-per-player cap
   id_rfq_daily_cap: 100
   id_rfq_daily_cap_paper: 40
   take_rate_warn: 0.05
-  exploration_share: 0.15
+  exploration_share: 0.15       # trial families' shares (below) also come off the top of the new-combo budget
   quote_window_s: 5.0
   max_open_rfqs: 90
   rate_budget_fraction: 0.60
 
 search:
-  payout_band: [8.0, 50.0]
+  payout_band: [8.0, 50.0]      # display filter and exploration sampling only; core combos aren't filtered by it
   joint_cap_multiple: 6.0       # fair joint never exceeds this multiple of independence
   lower_bound_base: 0.08        # fair_lower = fair * (1 - u)
   lower_bound_per_doubling: 0.10  # +10% of fair per doubling above 20x
   lower_bound_pivot_payout: 20.0
   max_candidates_per_run: 6000
   sim_paths: 20000
-  team_total_window: 7.0        # team-total rungs within +/-7 points of the team's main line
+  team_total_window: null       # off: core families use every team-total rung (set a number to keep only rungs within +/- that of the main line)
+  core_yardage_prob_range: [0.05, 0.35]  # yardage legs (pass/rec yards) in core families: only rungs whose YES is priced in this range
+  min_receiver_main_line: 50.5  # qb_pyds_rec_yds: receiver's main rec-yds line must be at least this
+  min_rb_main_rush_line: 60.5   # rb_ryds_win: RB1's main rush line must be at least this
+  history_min_n: 40             # history conditional used when the conditioning leg has at least this many games
+  near_lock_threshold: 0.93     # near-locked: history P(B|A) >= this (either direction)
+  near_lock_team_total_min: 0.80  # near_lock_team_total: own team-total rungs with history P >= this
+  same_player_min: 0.85         # same_player_rec_yds: history P(yards | receptions) >= this
+  thin_spread_abs: 0.05         # a leg is thin when its spread > this ...
+  thin_spread_rel: 0.40         # ... or > this share of the mid, or there is no ask
+  thin_history_weight: 0.50     # thin legs: probability = (1 - w) x mid + w x history base rate
+  # Core shares split what is left of the new-combo budget after exploration and the trial families;
+  # each trial family gets its own share of the whole new-combo budget.
   families:
+    near_lock_team_total:
+      label: "Near-lock: player TDs + own team total"
+      share: 0.30
+    qb_tail_team_win:
+      label: "QB big game + own team wins"
+      share: 0.25
+    same_player_rec_yds:
+      label: "Receptions + receiving yards (same player)"
+      share: 0.15
     qb_ptd_team_total:
       label: "QB pass TDs + own team total"
-      share: 0.40
+      share: 0.10
     qb_pyds_rec_yds:
-      label: "QB pass yards + own top receiver yards"
-      share: 0.25
-    rec_td_team_total:
-      label: "Top receiver TDs + own team total"
+      label: "QB pass yards + top-2 receiver yards"
       share: 0.20
+    qb_ptd_rec_td:
+      label: "Trial: QB pass TDs + WR1/TE1 2+ TDs"
+      share: 0.10
+      trial: true
+    rb_ryds_win:
+      label: "Trial: RB1 100+ rush yards + team wins"
+      share: 0.10
+      trial: true
+    qb_pyds_opp_total:
+      label: "Trial: QB 300+ yards + opponent total over"
+      share: 0.10
+      trial: true
     ml_h1_lead:
-      label: "Team win + same team 1H lead"
-      share: 0.15
+      label: "Trial: team win + same team 1H lead"
+      share: 0.10
+      trial: true
 
 schedules:
   daily_scan_enabled: true

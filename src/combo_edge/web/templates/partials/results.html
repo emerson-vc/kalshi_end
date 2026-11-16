@@ -1,5 +1,5 @@
 {% macro chip(text) -%}
-{%- set c = 'chip-ok' if text in ('Bought', 'Paper bought', 'Passes gates') else ('chip-bad' if text.startswith('Cap') or text.startswith('Stale') else ('chip-warn' if text.startswith('Below') else '')) -%}
+{%- set c = 'chip-ok' if text in ('Bought', 'Paper bought', 'Passes gates') else ('chip-bad' if text.startswith('Cap') or text.startswith('Stale') else ('chip-warn' if (text.startswith('Below') or text in ('Check by hand', 'Model disagrees with market')) else '')) -%}
 <span class="chip {{ c }}">{{ text }}</span>
 {%- endmacro %}
 {% if not done %}
@@ -32,8 +32,17 @@
         <div class="font-semibold">{{ r.leg_a }}</div>
         <div class="font-semibold">{{ r.leg_b }}</div>
         <div class="text-xs muted mt-1">{{ r.game }} · {{ r.kickoff_text }} · {{ r.family_label }}</div>
+        {% set e0 = r.explanation %}{% set nl = e0.get('near_lock') %}
+        <div class="mt-1 flex flex-wrap gap-1">
+          <span class="chip" title="Where the conditional came from">{{ e0.get('source') or e0.get('method') or '—' }}</span>
+          {% if nl %}<span class="chip chip-ok">Near-locked</span>{% endif %}
+          {% if e0.get('thin_legs') %}<span class="chip chip-warn" title="{{ e0.thin_legs|join('; ') }}">Thin leg</span>{% endif %}
+          {% if e0.get('model_disagrees') %}<span class="chip chip-warn" title="{{ e0.model_disagrees|join('; ') }}">Model disagrees with market</span>{% endif %}
+        </div>
+        {% if nl %}<div class="text-xs mt-1">“{{ nl.B }}” hits {{ '%.0f'|format(nl.rate * 100) }}% when “{{ nl.A }}” hits (history n={{ nl.n }}){% if nl.get('leg_alone_payout') and pay %} · combo pays <b>{{ fmt(pay, 'payout') }}</b> vs leg A alone {{ fmt(nl.leg_alone_payout, 'payout') }}{% endif %}</div>{% endif %}
         <div x-show="why" x-cloak class="mt-3 text-xs space-y-1 border-t border-[var(--border)] pt-2">
           {% set e = r.explanation %}
+          {% for m in e.get('model_disagrees', []) %}<div class="text-[var(--warn)]">Model disagrees with market: {{ m }}. Lower bound widened, never auto-bought.</div>{% endfor %}
           <div>P(“{{ e.get('A') }}”) = <b class="num">{{ fmt(e.get('pA'), 'pct') }}</b></div>
           <div>P(“{{ e.get('B') }}” | first leg) = <b class="num">{{ fmt(e.get('cond'), 'pct') }}</b> (on its own {{ fmt(e.get('pB'), 'pct') }})</div>
           <div>Fair joint {{ '%.2f'|format((e.get('joint') or 0) * 100) }}% ({{ fmt(r.fair_payout, 'payout') }}) vs makers' price {{ '%.2f'|format(100 / pay) if pay else '—' }}% · independent {{ '%.2f'|format((e.get('independent') or 0) * 100) }}% · leg product {{ fmt(r.leg_product, 'payout') }}{% if r.ratio %} · ratio {{ '%.2f'|format(r.ratio) }}{% endif %}</div>
@@ -75,6 +84,9 @@
         <div class="text-right"><div class="text-2xl font-bold num">{{ fmt(pay, 'payout') }}</div><div class="text-[10px] muted">{{ 'ID quote' if r.id_quoted else 'anonymous' }}</div></div>
       </div>
       <div class="text-xs muted">{{ r.matchup }} · {{ r.kickoff_text }}</div>
+      {% set e0 = r.explanation %}{% set nl = e0.get('near_lock') %}
+      <div class="flex flex-wrap gap-1"><span class="chip">{{ e0.get('source') or e0.get('method') or '—' }}</span>{% if nl %}<span class="chip chip-ok">Near-locked</span>{% endif %}{% if e0.get('thin_legs') %}<span class="chip chip-warn">Thin leg</span>{% endif %}{% if e0.get('model_disagrees') %}<span class="chip chip-warn" title="{{ e0.model_disagrees|join('; ') }}">Model disagrees with market</span>{% endif %}</div>
+      {% if nl %}<div class="text-xs">“{{ nl.B }}” hits {{ '%.0f'|format(nl.rate * 100) }}% when “{{ nl.A }}” hits (history n={{ nl.n }}){% if nl.get('leg_alone_payout') and pay %} · pays {{ fmt(pay, 'payout') }} vs leg A alone {{ fmt(nl.leg_alone_payout, 'payout') }}{% endif %}</div>{% endif %}
       <div class="flex flex-wrap gap-3 text-sm num">
         <span>Fair <b>{{ fmt(r.fair_payout, 'payout') }}</b></span>
         <span class="{{ 'pos' if (r.edge or -1) > 0 else 'neg' }}">Edge <b>{{ fmt(r.edge, 'edge') }}</b></span>
@@ -101,6 +113,10 @@
   <div class="panel p-4 text-sm space-y-1">
     <h3 class="font-bold mb-2">Run summary</h3>
     <div>{{ sm.get('games', 0) }} games · {{ '{:,}'.format(sm.get('legs', 0)) }} legs · {{ '{:,}'.format(sm.get('candidates', 0)) }} candidates · {{ sm.get('selected', 0) }} selected</div>
+    {% set cc = sm.get('core_coverage') %}{% if cc %}<div>Core combos covered: <b>{{ '{:,}'.format(cc.covered) }}/{{ '{:,}'.format(cc.total) }}</b>{% if cc.pct is not none %} ({{ (cc.pct * 100)|round|int }}%){% endif %} · creations this week {{ '{:,}'.format(sm.get('creations_used_week', 0)) }}/{{ '{:,}'.format(sm.get('creation_cap', 0)) }} ({{ sm.get('created_this_run', 0) }} this run)</div>{% endif %}
+    {% set sel = sm.get('selection') %}{% if sel %}<div>Selected: {{ sel.core_existing }} existing core (re-quoted free) · {{ sel.core_new }} new core · {{ sel.exploration }} exploration (new-combo budget {{ sel.new_budget }})</div>{% endif %}
+    {% if sm.get('families') %}<div class="muted text-xs">Families (candidates → selected): {% for f in sm.families if f.candidates %}{{ f.family }}{% if f.kind == 'trial' %} (trial){% endif %} {{ f.candidates }}→{{ f.selected }}{{ ' · ' if not loop.last }}{% endfor %}{% if sm.get('near_locked') %} · near-locked pairs: {{ sm.near_locked }}{% endif %}</div>{% endif %}
+    {% set cap = sm.get('candidate_cap') %}{% if cap and cap.cut %}<div class="muted">Candidate cap: kept {{ '{:,}'.format(cap.kept) }} of {{ '{:,}'.format(cap.generated) }} (cap {{ '{:,}'.format(cap.cap) }}; core never cut)</div>{% endif %}
     <div>Resolution: {% for k, v in (sm.get('resolution') or {}).items() %}{{ k.replace('_', ' ') }} {{ v }}{{ ', ' if not loop.last }}{% endfor %}</div>
     <div>Anonymous: {{ sm.get('anon_quoted', 0) }}/{{ sm.get('anon_sent', 0) }} quoted · ID: {{ sm.get('id_quoted', 0) }}/{{ sm.get('id_sent', 0) }} quoted · bought {{ sm.get('bought', 0) }}</div>
     <div class="muted">RFQ outcomes: {% for k, v in (sm.get('rfq_outcomes') or {}).items() %}{{ k }} {{ v }}{{ ', ' if not loop.last }}{% endfor %}</div>
@@ -111,6 +127,14 @@
   </div>
   <div class="panel p-4 text-sm">
     <h3 class="font-bold mb-2">Coverage</h3>
+    {% if sm.get('per_game') %}
+    <table class="tbl mb-3">
+      <thead><tr><th>Game</th><th class="text-right">Core</th><th class="text-right">Covered</th><th class="text-right">Exploration</th><th class="text-right">Kept</th></tr></thead>
+      <tbody>{% for g in sm.per_game %}
+        <tr><td>{{ g.matchup }}</td><td class="text-right num">{{ g.core }}</td><td class="text-right num">{{ g.get('covered', 0) }}</td><td class="text-right num">{{ g.exploration }}</td><td class="text-right num">{{ g.get('kept', 0) }}</td></tr>
+      {% endfor %}</tbody>
+    </table>
+    {% endif %}
     <table class="tbl">
       <thead><tr><th>Game</th><th class="text-right">Legs</th><th class="text-right">Candidates</th></tr></thead>
       <tbody>{% for g in (sm.get('coverage') or {}).get('games', []) %}

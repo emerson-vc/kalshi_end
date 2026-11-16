@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import html
 import hmac
 import json
 import os
@@ -33,12 +34,13 @@ from combo_edge.web import charts, views
 HERE = Path(__file__).parent
 WATCH_DIRS = [paths.PACKAGE_DIR]
 
+FOUND_DISPLAY_BAND = [2, 1000]  # 1000 = no upper limit (app.js)
 GLOSSARY = [
     ("Pays", "What the best ID quote pays per $1 staked, fee included, e.g. 49.0x. Same number the Kalshi app shows."),
     ("Fair", "What the combo should pay if priced at our fair probability (1 ÷ fair joint probability)."),
     ("Edge", "Expected profit per $1 at the quoted payout: fair probability × payout − 1. +88% means $0.88 per $1 on average."),
     ("Edge (low)", "Edge using the fair model's lower bound, which widens for long shots. Ranking and gates use this."),
-    ("Needs", "The minimum edge required at this payout (the payout curve). Above 50x it's +100%."),
+    ("Needs", "The minimum edge required at this payout (the payout curve, smooth in log-payout): +35% at 50x, +45% at 75x, +85% at 200x; above 200x it's +100%."),
     ("Leg product", "Payout of leg A × payout of leg B bought separately — what the combo would pay if the legs were unrelated."),
     ("Ratio", "Combo payout ÷ leg product. Near 1.0 on strongly linked legs means makers priced them as unrelated: the edge."),
     ("ID quote", "A quote on an RFQ sent under your Kalshi ID — the price you'd actually get. Only these are ever bought."),
@@ -106,8 +108,10 @@ def create_app(*, lan: bool = False, argv: list[str] | None = None) -> FastAPI:
         g = budget.gauges(s, d, env_name)
         from combo_edge.learning.fade import trend
 
+        done = views.latest_run(d, env_name, finished=True)
         return {
-            **g, "killed": is_killed(d), "restart_needed": restart_needed(), "fade_warning": trend(d, env_name)["warning"],
+            **g, "core_coverage": ((done or {}).get("summary") or {}).get("core_coverage"),
+            "killed": is_killed(d), "restart_needed": restart_needed(), "fade_warning": trend(d, env_name)["warning"],
             "scan_running": bool(st.scan_task and not st.scan_task.done()) or bool(__import__("combo_edge.pipeline.scan", fromlist=["scan_running"]).scan_running(d)),
             "forbid_live": env_config().forbid_live,
         }
@@ -158,10 +162,12 @@ def create_app(*, lan: bool = False, argv: list[str] | None = None) -> FastAPI:
         run = views.latest_run(d, env_name)
         done = views.latest_run(d, env_name, finished=True)
         rows = views.found_rows(d, env_name, done["id"] if done else None)
-        lo, hi = s.get("payout_band")
+        # display filter defaults wide open (2x – any): the payout band is not a filter on what you see
         return {"run": run, "done": done, "rows": rows, "next_scan": next_scan_ts(d, env_name, s), "s": s,
-                "band": [lo, hi], "families": sorted({r["family_label"] for r in rows}), "games": sorted({r["matchup"] for r in rows}),
-                "id_left": budget.id_left(s, d, env_name), "stages": (run or {}).get("progress", {}).get("stages")}
+                "band": FOUND_DISPLAY_BAND, "families": sorted({r["family_label"] for r in rows}), "games": sorted({r["matchup"] for r in rows}),
+                "id_left": budget.id_left(s, d, env_name), "stages": (run or {}).get("progress", {}).get("stages"),
+                "id_short": max(0, min(int(s.get("id_shortlist_per_run")), budget.id_left(s, d, env_name) - int(s.get("id_reserve") or 0))),
+                "trace_games": views.trace_games(d, env_name)}
 
     @app.get("/bets", response_class=HTMLResponse)
     async def bets_page(request: Request, book: str = "all", tab: str = "taken") -> HTMLResponse:
@@ -250,7 +256,7 @@ def create_app(*, lan: bool = False, argv: list[str] | None = None) -> FastAPI:
 
     # ---------------------------------------------------------------- actions
     @app.post("/api/scan")
-    async def api_scan(request: Request, stake: float = Form(5.0), budget_n: int = Form(500), id_shortlist: int = Form(30), dry_run: str = Form("")) -> Any:
+    async def api_scan(request: Request, stake: float = Form(5.0), budget_n: int = Form(500), id_shortlist: int | None = Form(None), dry_run: str = Form("")) -> Any:
         from combo_edge.pipeline.scan import ScanParams, run_scan, scan_running
 
         if (st.scan_task and not st.scan_task.done()) or scan_running(db()):
@@ -403,7 +409,7 @@ def create_app(*, lan: bool = False, argv: list[str] | None = None) -> FastAPI:
                 continue
             meta = META_BY_KEY[key]
             try:
-                if meta.kind in ("curve", "band", "families"):
+                if meta.kind in ("curve", "band", "range", "families"):
                     s.set(key, json.loads(str(val)))
                 else:
                     s.set(key, val)
@@ -450,6 +456,43 @@ def create_app(*, lan: bool = False, argv: list[str] | None = None) -> FastAPI:
     async def api_restart() -> Any:
         st.restart_pending = True
         return msg("Restarting as soon as no scan is running…", "info")
+
+    @app.get("/p/trace/legs", response_class=HTMLResponse)
+    async def p_trace_legs(request: Request) -> HTMLResponse:
+        q = request.query_params
+        slot = q.get("slot", "a")
+        gid = q.get(f"game_{slot}") or ""
+        opts = ['<option value="">Leg…</option>']
+        for r in views.trace_legs(db(), env_name, gid):
+            opts.append(f'<option value="{html.escape(r["ticker"])}">{html.escape(r["wording"] or r["ticker"])}</option>')
+        return HTMLResponse("".join(opts))
+
+    @app.post("/api/trace", response_class=HTMLResponse)
+    async def api_trace(request: Request) -> HTMLResponse:
+        from combo_edge.pipeline.trace import parse_leg, trace_combo
+
+        form = await request.form()
+        legs = []
+        try:
+            for slot in ("a", "b"):
+                raw = str(form.get(f"ticker_{slot}") or "").strip() or str(form.get(f"leg_{slot}") or "").strip()
+                if not raw:
+                    raise ValueError(f"pick or paste leg {slot.upper()}")
+                leg = parse_leg(raw)
+                if form.get(f"no_{slot}"):
+                    leg.side = "no"
+                legs.append(leg)
+            run_txt = str(form.get("run") or "").strip()
+            run_id = int(run_txt) if run_txt else None
+        except ValueError as e:
+            return render("partials/trace.html", {"request": request, "t": None, "error": str(e)})
+        sess, own = await session()
+        try:
+            t = await trace_combo(db(), legs[0], legs[1], run_id=run_id, session=sess, settings=settings(), env=env_name)
+        finally:
+            if own:
+                await sess.close()
+        return render("partials/trace.html", {"request": request, "t": t, "error": None})
 
     @app.post("/api/fit")
     async def api_fit() -> Any:
@@ -556,7 +599,9 @@ class _StoredCandidate:
         g = d.one("SELECT * FROM games WHERE id=?", (c["game_id"],)) or {"id": c["game_id"], "start_ts": time.time() + 86400}
         u = ex.get("u_base", 0.08)
         fj = c["fair_joint"]
-        self.fair = SimpleNamespace(fair_joint=fj, fair_payout=1 / fj, lower=lambda pay, s: lower_bound(fj, u, pay, s))
+        self.fair = SimpleNamespace(fair_joint=fj, fair_payout=1 / fj, lower=lambda pay, s: lower_bound(fj, u, pay, s),
+                                    model_disagrees=list(ex.get("model_disagrees") or []), near_lock=ex.get("near_lock"),
+                                    thin_legs=list(ex.get("thin_legs") or []))
         self.game = SimpleNamespace(id=g["id"], start_ts=g["start_ts"])
         legs = d.query("SELECT ticker, player_id FROM legs WHERE ticker IN (?,?)", (c["leg_a"], c["leg_b"]))
         self.players = sorted({l["player_id"] for l in legs if l["player_id"]})

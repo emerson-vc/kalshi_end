@@ -14,10 +14,11 @@ from combo_edge.kalshi.mock.exchange import MockMaker
 from combo_edge.pipeline.quotes import QuoteBook, RfqRunner
 
 FAST = Timing(confirm_window_s=0.3, exec_timer_s=0.1, slack_s=0.6)
-CURVE = [[3, 0.08], [10, 0.12], [20, 0.18], [35, 0.25], [50, 0.35]]
+CURVE = [[3, 0.08], [10, 0.12], [20, 0.18], [35, 0.25], [50, 0.35], [75, 0.45], [100, 0.55], [150, 0.70], [200, 0.85]]
 
 
-@pytest.mark.parametrize("payout,expected", [(2, 0.08), (3, 0.08), (10, 0.12), (20, 0.18), (35, 0.25), (50, 0.35)])
+@pytest.mark.parametrize("payout,expected", [(2, 0.08), (3, 0.08), (10, 0.12), (20, 0.18), (35, 0.25), (50, 0.35),
+                                             (75, 0.45), (100, 0.55), (150, 0.70), (200, 0.85)])
 def test_payout_curve_points(payout, expected):
     assert required_ev(payout, CURVE) == pytest.approx(expected)
 
@@ -30,9 +31,24 @@ def test_payout_curve_interpolates_in_log_payout():
     assert 0.12 < required_ev(14, CURVE) < 0.18
 
 
-def test_longshot_rule():
-    assert required_ev(51, CURVE) == pytest.approx(1.0)
-    assert required_ev(200, CURVE) == pytest.approx(1.0)
+def test_no_cliff_past_50x():
+    # continuous at 50x: 50.1x needs barely more than +35%, not +100%
+    assert required_ev(50.1, CURVE) == pytest.approx(0.35, abs=0.002)
+    assert required_ev(60, CURVE) < 0.45
+    # monotone all the way to the end of the curve
+    pays = [3, 5, 10, 20, 35, 50, 51, 60, 75, 90, 100, 120, 150, 180, 200]
+    reqs = [required_ev(p, CURVE) for p in pays]
+    assert all(a <= b for a, b in zip(reqs, reqs[1:]))
+    # above the last point (200x): +100%
+    assert required_ev(201, CURVE) == pytest.approx(1.0)
+    assert required_ev(500, CURVE) == pytest.approx(1.0)
+
+
+def test_gate_needs_about_45pct_at_75x(settings):
+    assert settings.get("payout_curve") == CURVE  # the shipped default
+    r = evaluate(gi(payout=75, fair_joint=1.40 / 75, fair_lower=1.3 / 75), Exposure(), settings)  # +40%: below
+    assert not r.passes and r.required_ev == pytest.approx(0.45)
+    assert evaluate(gi(payout=75, fair_joint=1.50 / 75, fair_lower=1.3 / 75), Exposure(), settings).passes  # +50%
 
 
 def gi(**kw):
@@ -58,9 +74,11 @@ def test_below_gate_and_lower_bound(settings):
     assert not r.passes and "lower bound" in r.reason
 
 
-def test_above_50x_needs_100pct(settings):
-    assert not evaluate(gi(payout=60, fair_joint=1 / 35, fair_lower=1 / 40), Exposure(), settings).passes  # +71%
-    assert evaluate(gi(payout=60, fair_joint=1 / 25, fair_lower=1 / 28), Exposure(), settings).passes  # +140%
+def test_above_200x_needs_100pct(settings):
+    assert not evaluate(gi(payout=250, fair_joint=1.9 / 250, fair_lower=1.5 / 250), Exposure(), settings).passes  # +90%
+    assert evaluate(gi(payout=250, fair_joint=2.2 / 250, fair_lower=1.6 / 250), Exposure(), settings).passes  # +120%
+    # 60x at +71% used to fail (the old 50x cliff demanded +100%); now it passes (needs ~+39%)
+    assert evaluate(gi(payout=60, fair_joint=1 / 35, fair_lower=1 / 40), Exposure(), settings).passes
 
 
 def test_caps(settings):
